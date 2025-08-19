@@ -1,6 +1,6 @@
 package nacos
 
-import "github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+import "github.com/ishaqcherry9/nacos_sdk_go/common/constant"
 
 const (
 	allEths  = "0.0.0.0"
