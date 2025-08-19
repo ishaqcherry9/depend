@@ -3,10 +3,10 @@ package nacos
 import (
 	"github.com/ishaqcherry9/depend/pkg/conf"
 	"github.com/ishaqcherry9/depend/pkg/logger"
-	"github.com/nacos-group/nacos-sdk-go/v2/clients"
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"github.com/ishaqcherry9/nacos_sdk_go/clients"
+	"github.com/ishaqcherry9/nacos_sdk_go/clients/config_client"
+	"github.com/ishaqcherry9/nacos_sdk_go/common/constant"
+	"github.com/ishaqcherry9/nacos_sdk_go/vo"
 	"go.uber.org/zap"
 	"sync"
 )
