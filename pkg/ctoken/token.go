@@ -2,6 +2,7 @@ package ctoken
 
 import (
 	"context"
+	"fmt"
 	"github.com/gogf/gf/v2/errors/gcode"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
@@ -9,6 +10,7 @@ import (
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/ishaqcherry9/depend/pkg/goredis"
 	"github.com/ishaqcherry9/depend/pkg/logger"
+	"strings"
 )
 
 type Token interface {
@@ -59,15 +61,26 @@ func (c *CToken) Generate(ctx context.Context, userKey string, data any) (token 
 		return
 	}
 
+	xDeviceId := gconv.String(data.(g.Map)["X-Device-Id"])
+	xClient := gconv.String(data.(g.Map)["X-Client"])
+
+	var cacheKey string
 	if c.Options.MultiLogin {
-		// 支持多端重复登录，如果获取到返回相同token
-		token, _, err = c.Get(ctx, userKey)
-		if err == nil && token != "" {
-			return
+
+		cacheKey = fmt.Sprintf("%s_%s", xClient, userKey)
+	} else {
+
+		cacheKey = fmt.Sprintf("%s_%s_%s", xClient, xDeviceId, userKey)
+	}
+
+	if c.Options.MultiLogin {
+		existingToken, _, getErr := c.Get(ctx, cacheKey)
+		if getErr == nil && existingToken != "" {
+			return existingToken, nil
 		}
 	}
 
-	token, err = c.Codec.Encode(ctx, userKey)
+	token, err = c.Codec.Encode(ctx, cacheKey)
 	if err != nil {
 		err = gerror.WrapCode(gcode.CodeInternalError, err)
 		return
@@ -75,13 +88,15 @@ func (c *CToken) Generate(ctx context.Context, userKey string, data any) (token 
 
 	userCache := g.Map{
 		KeyUserKey:    userKey,
+		KeyXDeviceID:  xDeviceId,
+		KeyXClient:    xClient,
 		KeyToken:      token,
 		KeyData:       data,
 		KeyRefreshNum: 0,
 		KeyCreateTime: gtime.Now().TimestampMilli(),
 	}
 
-	err = c.Cache.Set(ctx, userKey, userCache)
+	err = c.Cache.Set(ctx, cacheKey, userCache)
 	if err != nil {
 		err = gerror.WrapCode(gcode.CodeInternalError, err)
 		return
@@ -96,14 +111,33 @@ func (c *CToken) Validate(ctx context.Context, token string) (userKey string, er
 		return
 	}
 
-	userKey, err = c.Codec.Decrypt(ctx, token)
+	cacheKey, err := c.Codec.Decrypt(ctx, token)
 	if err != nil {
 		err = gerror.WrapCode(gcode.CodeInvalidParameter, err)
 		return
 	}
-	userCache, err := c.Cache.Get(ctx, userKey)
+
+	parts := strings.Split(cacheKey, "_")
+
+	if c.Options.MultiLogin {
+
+		if len(parts) != 2 {
+			err = gerror.NewCode(gcode.CodeInvalidParameter, MsgErrTokenFormat)
+			return
+		}
+		userKey = parts[1]
+	} else {
+
+		if len(parts) != 3 {
+			err = gerror.NewCode(gcode.CodeInvalidParameter, MsgErrTokenFormat)
+			return
+		}
+		userKey = parts[2]
+	}
+
+	userCache, err := c.Cache.Get(ctx, cacheKey)
 	if err != nil {
-		logger.Error("Validate cache.Get error", logger.Err(err), logger.String("userKey", userKey))
+		logger.Error("Validate cache.Get error", logger.Err(err), logger.String("cacheKey", cacheKey))
 		return
 	}
 	if userCache == nil {
@@ -111,7 +145,7 @@ func (c *CToken) Validate(ctx context.Context, token string) (userKey string, er
 		err = gerror.NewCode(gcode.CodeInternalError, MsgErrDataEmpty)
 		return
 	}
-	if token != userCache[KeyToken] {
+	if token != gconv.String(userCache[KeyToken]) {
 		err = gerror.NewCode(gcode.CodeInvalidParameter, MsgErrValidate)
 		return
 	}
@@ -135,7 +169,7 @@ func (c *CToken) Validate(ctx context.Context, token string) (userKey string, er
 		if nowTime > gconv.Int64(createTime)+c.Options.MaxRefresh {
 			userCache[KeyRefreshNum] = refreshNum + 1
 			userCache[KeyCreateTime] = gtime.Now().TimestampMilli()
-			err = c.Cache.Set(ctx, userKey, userCache)
+			err = c.Cache.Set(ctx, cacheKey, userCache)
 			if err != nil {
 				err = gerror.WrapCode(gcode.CodeInternalError, err)
 				return
@@ -147,13 +181,13 @@ func (c *CToken) Validate(ctx context.Context, token string) (userKey string, er
 	return
 }
 
-func (c *CToken) Get(ctx context.Context, userKey string) (token string, data any, err error) {
-	if userKey == "" {
+func (c *CToken) Get(ctx context.Context, cacheKey string) (token string, data any, err error) {
+	if cacheKey == "" {
 		err = gerror.NewCode(gcode.CodeMissingParameter, MsgErrUserKeyEmpty)
 		return
 	}
 
-	userCache, err := c.Cache.Get(ctx, userKey)
+	userCache, err := c.Cache.Get(ctx, cacheKey)
 	if err != nil {
 		return "", nil, gerror.WrapCode(gcode.CodeInternalError, err)
 	}
@@ -170,13 +204,27 @@ func (c *CToken) ParseToken(ctx context.Context, token string) (userKey string, 
 		return
 	}
 
-	userKey, err = c.Codec.Decrypt(ctx, token)
+	cacheKey, err := c.Codec.Decrypt(ctx, token)
 	if err != nil {
 		err = gerror.WrapCode(gcode.CodeInvalidParameter, err)
 		return
 	}
 
-	userCache, err := c.Cache.Get(ctx, userKey)
+	// 解析出userKey
+	parts := strings.Split(cacheKey, "_")
+	if c.Options.MultiLogin {
+		if len(parts) != 2 {
+			return "", nil, gerror.NewCode(gcode.CodeInvalidParameter, MsgErrTokenFormat)
+		}
+		userKey = parts[1]
+	} else {
+		if len(parts) != 3 {
+			return "", nil, gerror.NewCode(gcode.CodeInvalidParameter, MsgErrTokenFormat)
+		}
+		userKey = parts[2]
+	}
+
+	userCache, err := c.Cache.Get(ctx, cacheKey)
 	if err != nil {
 		return "", nil, gerror.WrapCode(gcode.CodeInternalError, err)
 	}
@@ -186,12 +234,12 @@ func (c *CToken) ParseToken(ctx context.Context, token string) (userKey string, 
 	return userKey, userCache[KeyData], nil
 }
 
-func (c *CToken) Destroy(ctx context.Context, userKey string) error {
-	if userKey == "" {
+func (c *CToken) Destroy(ctx context.Context, cacheKey string) error {
+	if cacheKey == "" {
 		return gerror.NewCode(gcode.CodeMissingParameter, MsgErrUserKeyEmpty)
 	}
 
-	err := c.Cache.Remove(ctx, userKey)
+	err := c.Cache.Remove(ctx, cacheKey)
 	if err != nil {
 		return gerror.WrapCode(gcode.CodeInternalError, err)
 	}

@@ -15,7 +15,9 @@ const (
 	KeyCreateTime = "createTime" // 创建时间
 	KeyRefreshNum = "refreshNum" // 刷新次数
 	KeyData       = "data"       // 缓存自定义数据
-	KeyToken      = "token"      // token
+	KeyToken      = "X-Token"    // token
+	KeyXDeviceID  = "X-Device-Id"
+	KeyXClient    = "X-Client"
 )
 
 const (
@@ -25,4 +27,5 @@ const (
 	MsgErrValidate     = "user validate error"
 	MsgErrDataEmpty    = "cache value is nil"
 	MsgErrAuthInvalid  = "invalid authentication"
+	MsgErrTokenFormat  = "invalid token format"
 )

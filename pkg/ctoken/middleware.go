@@ -88,19 +88,14 @@ func GetUserKey(g *gin.Context) string {
 }
 
 func GetRequestToken(g *gin.Context) (string, error) {
-	authHeader := g.GetHeader("Authorization")
-	if authHeader != "" {
-		parts := strings.SplitN(authHeader, " ", 2)
-		if !(len(parts) == 2 && parts[0] == "Bearer") {
-			return "", errcode.InvalidParams.Err("Bearer param invalid")
-		} else if parts[1] == "" {
-			return "", errcode.InvalidParams.Err("Bearer param empty")
-		}
-		return parts[1], nil
+	token := g.GetHeader("X-Token")
+	if token != "" {
+		return token, nil
 	}
-	authHeader = g.Query(KeyToken)
-	if authHeader == "" {
+
+	token = g.Query(KeyToken)
+	if token == "" {
 		return "", errcode.InvalidParams.Err("token empty")
 	}
-	return authHeader, nil
+	return token, nil
 }
