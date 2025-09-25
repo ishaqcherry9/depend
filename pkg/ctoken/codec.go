@@ -65,7 +65,7 @@ func (c *DefaultCodec) Decrypt(ctx context.Context, token string) (userKey strin
 		return "", err
 	}
 	decryptArray := gstr.Split(string(decryptStr), c.Delimiter)
-	if len(decryptArray) < 4 || len(decryptArray) > 5 {
+	if len(decryptArray) < 3 || len(decryptArray) > 4 {
 		return "", errors.New(MsgErrTokenLen)
 	}
 	return strings.Join(decryptArray[:len(decryptArray)-1], c.Delimiter), nil
