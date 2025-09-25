@@ -83,10 +83,10 @@ func (c *CToken) Generate(ctx context.Context, userKey string, data any) (token 
 	var cacheKey string
 	if c.Options.MultiLogin {
 
-		cacheKey = fmt.Sprintf("%s:%s", xClient, userKey)
+		cacheKey = fmt.Sprintf("%s:%s:%s", c.Options.SiteID, xClient, userKey)
 	} else {
 
-		cacheKey = fmt.Sprintf("%s:%s:%s", xClient, xDeviceId, userKey)
+		cacheKey = fmt.Sprintf("%s:%s:%s:%s", c.Options.SiteID, xClient, xDeviceId, userKey)
 	}
 
 	if c.Options.MultiLogin {
@@ -137,18 +137,18 @@ func (c *CToken) Validate(ctx context.Context, token string) (userKey string, er
 
 	if c.Options.MultiLogin {
 
-		if len(parts) != 2 {
-			err = gerror.NewCode(gcode.CodeInvalidParameter, MsgErrTokenFormat)
-			return
-		}
-		userKey = parts[1]
-	} else {
-
 		if len(parts) != 3 {
 			err = gerror.NewCode(gcode.CodeInvalidParameter, MsgErrTokenFormat)
 			return
 		}
 		userKey = parts[2]
+	} else {
+
+		if len(parts) != 4 {
+			err = gerror.NewCode(gcode.CodeInvalidParameter, MsgErrTokenFormat)
+			return
+		}
+		userKey = parts[3]
 	}
 
 	userCache, err := c.Cache.Get(ctx, cacheKey)
@@ -229,15 +229,15 @@ func (c *CToken) ParseToken(ctx context.Context, token string) (userKey string, 
 	// 解析出userKey
 	parts := strings.Split(cacheKey, ":")
 	if c.Options.MultiLogin {
-		if len(parts) != 2 {
-			return "", nil, gerror.NewCode(gcode.CodeInvalidParameter, MsgErrTokenFormat)
-		}
-		userKey = parts[1]
-	} else {
 		if len(parts) != 3 {
 			return "", nil, gerror.NewCode(gcode.CodeInvalidParameter, MsgErrTokenFormat)
 		}
 		userKey = parts[2]
+	} else {
+		if len(parts) != 4 {
+			return "", nil, gerror.NewCode(gcode.CodeInvalidParameter, MsgErrTokenFormat)
+		}
+		userKey = parts[3]
 	}
 
 	userCache, err := c.Cache.Get(ctx, cacheKey)
@@ -265,9 +265,9 @@ func (c *CToken) Destroy(ctx context.Context, cacheKey string) error {
 
 	var cacheMKey string
 	if c.Options.MultiLogin {
-		cacheMKey = fmt.Sprintf("%s:%s", client, userKey)
+		cacheMKey = fmt.Sprintf("%s:%s:%s", c.Options.SiteID, client, userKey)
 	} else {
-		cacheMKey = fmt.Sprintf("%s:%s:%s", client, deviceId, userKey)
+		cacheMKey = fmt.Sprintf("%s:%s:%s:%s", c.Options.SiteID, client, deviceId, userKey)
 	}
 
 	err := c.Cache.Remove(ctx, cacheMKey)
