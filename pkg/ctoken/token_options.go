@@ -15,7 +15,6 @@ type Options struct {
 	EncryptKey       []byte
 	MultiLogin       bool
 	SiteID           string
-	AppName          string
 	AuthExcludePaths g.SliceStr
 }
 
