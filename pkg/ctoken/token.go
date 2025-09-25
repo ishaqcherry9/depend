@@ -2,6 +2,7 @@ package ctoken
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/gogf/gf/v2/errors/gcode"
 	"github.com/gogf/gf/v2/errors/gerror"
@@ -271,6 +272,9 @@ func (c *CToken) Destroy(ctx context.Context, cacheKey string) error {
 
 	err := c.Cache.Remove(ctx, cacheMKey)
 	if err != nil {
+		if errors.Is(err, goredis.ErrRedisNotFound) {
+			return gerror.NewCode(gcode.CodeInvalidParameter, MsgErrAuthInvalid)
+		}
 		return gerror.WrapCode(gcode.CodeInternalError, err)
 	}
 	return nil
