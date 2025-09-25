@@ -21,11 +21,14 @@ const (
 )
 
 const (
-	MsgErrUserKeyEmpty = "userKey empty"
-	MsgErrTokenEmpty   = "token is empty"
-	MsgErrTokenLen     = "token len error"
-	MsgErrValidate     = "user validate error"
-	MsgErrDataEmpty    = "cache value is nil"
-	MsgErrAuthInvalid  = "invalid authentication"
-	MsgErrTokenFormat  = "invalid token format"
+	MsgErrUserKeyEmpty  = "userKey empty"
+	MsgErrTokenEmpty    = "token is empty"
+	MsgErrTokenLen      = "token len error"
+	MsgErrValidate      = "user validate error"
+	MsgErrDataEmpty     = "cache value is nil"
+	MsgErrAuthInvalid   = "invalid authentication"
+	MsgErrTokenFormat   = "invalid token format"
+	MsgErrPlatformEmpty = "invalid platform info"
+	MsgErrDeviceIDEmpty = "invalid deviceID info"
+	MsgErrClientEmpty   = "invalid client info"
 )

@@ -61,8 +61,23 @@ func (c *CToken) Generate(ctx context.Context, userKey string, data any) (token 
 		return
 	}
 
-	xDeviceId := gconv.String(data.(g.Map)["X-Device-Id"])
-	xClient := gconv.String(data.(g.Map)["X-Client"])
+	dataKV := gconv.Map(data)
+	if dataKV == nil {
+		err = gerror.NewCode(gcode.CodeMissingParameter, MsgErrPlatformEmpty)
+		return
+	}
+
+	xDeviceId := gconv.String(dataKV["X-Device-Id"])
+	if xDeviceId == "" {
+		err = gerror.NewCode(gcode.CodeMissingParameter, MsgErrDeviceIDEmpty)
+		return
+	}
+	xClient := gconv.String(dataKV["X-Client"])
+
+	if xClient == "" {
+		err = gerror.NewCode(gcode.CodeMissingParameter, MsgErrClientEmpty)
+		return
+	}
 
 	var cacheKey string
 	if c.Options.MultiLogin {
@@ -239,7 +254,22 @@ func (c *CToken) Destroy(ctx context.Context, cacheKey string) error {
 		return gerror.NewCode(gcode.CodeMissingParameter, MsgErrUserKeyEmpty)
 	}
 
-	err := c.Cache.Remove(ctx, cacheKey)
+	parts := strings.Split(cacheKey, "_")
+	if len(parts) != 3 {
+		return gerror.NewCode(gcode.CodeInvalidParameter, "invalid key format")
+	}
+	client := parts[0]
+	deviceId := parts[1]
+	userKey := parts[2]
+
+	var cacheMKey string
+	if c.Options.MultiLogin {
+		cacheMKey = fmt.Sprintf("%s_%s", client, userKey)
+	} else {
+		cacheMKey = fmt.Sprintf("%s_%s_%s", client, deviceId, userKey)
+	}
+
+	err := c.Cache.Remove(ctx, cacheMKey)
 	if err != nil {
 		return gerror.WrapCode(gcode.CodeInternalError, err)
 	}
