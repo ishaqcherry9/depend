@@ -8,6 +8,7 @@ import (
 	"github.com/gogf/gf/v2/encoding/gbase64"
 	"github.com/gogf/gf/v2/text/gstr"
 	"github.com/gogf/gf/v2/util/grand"
+	"strings"
 )
 
 type Encoder interface {
@@ -64,8 +65,8 @@ func (c *DefaultCodec) Decrypt(ctx context.Context, token string) (userKey strin
 		return "", err
 	}
 	decryptArray := gstr.Split(string(decryptStr), c.Delimiter)
-	if len(decryptArray) < 2 {
+	if len(decryptArray) < 3 || len(decryptArray) > 4 {
 		return "", errors.New(MsgErrTokenLen)
 	}
-	return decryptArray[0], nil
+	return strings.Join(decryptArray[:len(decryptArray)-1], c.Delimiter), nil
 }
