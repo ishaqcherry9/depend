@@ -82,10 +82,10 @@ func (c *CToken) Generate(ctx context.Context, userKey string, data any) (token 
 	var cacheKey string
 	if c.Options.MultiLogin {
 
-		cacheKey = fmt.Sprintf("%s_%s", xClient, userKey)
+		cacheKey = fmt.Sprintf("%s:%s", xClient, userKey)
 	} else {
 
-		cacheKey = fmt.Sprintf("%s_%s_%s", xClient, xDeviceId, userKey)
+		cacheKey = fmt.Sprintf("%s:%s:%s", xClient, xDeviceId, userKey)
 	}
 
 	if c.Options.MultiLogin {
@@ -132,7 +132,7 @@ func (c *CToken) Validate(ctx context.Context, token string) (userKey string, er
 		return
 	}
 
-	parts := strings.Split(cacheKey, "_")
+	parts := strings.Split(cacheKey, ":")
 
 	if c.Options.MultiLogin {
 
@@ -226,7 +226,7 @@ func (c *CToken) ParseToken(ctx context.Context, token string) (userKey string, 
 	}
 
 	// 解析出userKey
-	parts := strings.Split(cacheKey, "_")
+	parts := strings.Split(cacheKey, ":")
 	if c.Options.MultiLogin {
 		if len(parts) != 2 {
 			return "", nil, gerror.NewCode(gcode.CodeInvalidParameter, MsgErrTokenFormat)
@@ -254,7 +254,7 @@ func (c *CToken) Destroy(ctx context.Context, cacheKey string) error {
 		return gerror.NewCode(gcode.CodeMissingParameter, MsgErrUserKeyEmpty)
 	}
 
-	parts := strings.Split(cacheKey, "_")
+	parts := strings.Split(cacheKey, ":")
 	if len(parts) != 3 {
 		return gerror.NewCode(gcode.CodeInvalidParameter, "invalid key format")
 	}
@@ -264,9 +264,9 @@ func (c *CToken) Destroy(ctx context.Context, cacheKey string) error {
 
 	var cacheMKey string
 	if c.Options.MultiLogin {
-		cacheMKey = fmt.Sprintf("%s_%s", client, userKey)
+		cacheMKey = fmt.Sprintf("%s:%s", client, userKey)
 	} else {
-		cacheMKey = fmt.Sprintf("%s_%s_%s", client, deviceId, userKey)
+		cacheMKey = fmt.Sprintf("%s:%s:%s", client, deviceId, userKey)
 	}
 
 	err := c.Cache.Remove(ctx, cacheMKey)
