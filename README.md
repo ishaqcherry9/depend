@@ -1,5 +1,2 @@
 # depend
-# Andy
-# Key
-
-# robert
+基础lib库
