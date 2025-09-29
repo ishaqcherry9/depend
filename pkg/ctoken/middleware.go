@@ -5,6 +5,7 @@ import (
 	"github.com/gogf/gf/v2/text/gstr"
 	"github.com/ishaqcherry9/depend/pkg/errcode"
 	"github.com/ishaqcherry9/depend/pkg/gin/response"
+	"net/http"
 	"strings"
 )
 
@@ -17,7 +18,7 @@ func NewCTMiddleware(token Token) CTMiddleware {
 	return CTMiddleware{
 		Token: token,
 		ResFun: func(c *gin.Context, err error) {
-			response.Error(c, errcode.Unauthorized.RewriteMsg(MsgErrAuthInvalid))
+			response.ErrorStatus(c, http.StatusUnauthorized, errcode.Unauthorized.RewriteMsg(MsgErrAuthInvalid))
 		},
 	}
 }

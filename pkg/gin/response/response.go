@@ -1,26 +1,34 @@
 package response
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
-
 	"github.com/ishaqcherry9/depend/pkg/errcode"
+	"github.com/ishaqcherry9/depend/pkg/json-iterator"
+	"net/http"
 )
 
 type Result struct {
-	Code int         `json:"code"`
-	Msg  string      `json:"msg"`
-	Data interface{} `json:"data"`
-	//RequestId string      `json:"requestId"`
+	Code      int         `json:"code"`
+	Msg       string      `json:"msg"`
+	Data      interface{} `json:"data"`
+	RequestId string      `json:"requestId"`
 }
 
-func newResp(code int, msg string, data interface{}) *Result {
+func GetRequestId(c *gin.Context) string {
+	if v, isExist := c.Get("request_id"); isExist {
+		if requestID, ok := v.(string); ok {
+			return requestID
+		}
+	}
+	return ""
+}
+
+func newResp(code int, msg, requestId string, data interface{}) *Result {
 	resp := &Result{
-		Code: code,
-		Msg:  msg,
+		Code:      code,
+		Msg:       msg,
+		RequestId: requestId,
 	}
 
 	if data == nil {
@@ -44,6 +52,8 @@ func writeContentType(w http.ResponseWriter, value []string) {
 func writeJSON(c *gin.Context, code int, res interface{}) {
 	c.Writer.WriteHeader(code)
 	writeContentType(c.Writer, jsonContentType)
+
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	err := json.NewEncoder(c.Writer).Encode(res)
 	if err != nil {
 		fmt.Printf("json encode error, err = %s\n", err.Error())
@@ -55,7 +65,8 @@ func respJSONWithStatusCode(c *gin.Context, code int, msg string, data ...interf
 	if len(data) > 0 {
 		firstData = data[0]
 	}
-	resp := newResp(code, msg, firstData)
+
+	resp := newResp(code, msg, GetRequestId(c), firstData)
 
 	writeJSON(c, code, resp)
 }
@@ -120,8 +131,8 @@ func respJSONWith200(c *gin.Context, code int, msg string, data ...interface{}) 
 	if len(data) > 0 {
 		firstData = data[0]
 	}
-	resp := newResp(code, msg, firstData)
 
+	resp := newResp(code, msg, GetRequestId(c), firstData)
 	writeJSON(c, http.StatusOK, resp)
 }
 
@@ -129,6 +140,19 @@ func Success(c *gin.Context, data ...interface{}) {
 	respJSONWith200(c, 0, "ok", data...)
 }
 
+// 由于业务已进入开发，为减少改动，不再修改Error函数，新增ErrorStatus。
 func Error(c *gin.Context, err *errcode.Error, data ...interface{}) {
 	respJSONWith200(c, err.Code(), err.Msg(), data...)
+}
+
+// 诸如参数缺失http状态码应400非200；授权失败返401非200。
+// 按HTTP协议语义返回，便于后续监控&可观测性建设。
+func ErrorStatus(c *gin.Context, httpStatusCode int, err *errcode.Error, data ...interface{}) {
+	var firstData interface{}
+	if len(data) > 0 {
+		firstData = data[0]
+	}
+
+	resp := newResp(err.Code(), err.Msg(), GetRequestId(c), firstData)
+	writeJSON(c, httpStatusCode, resp)
 }
