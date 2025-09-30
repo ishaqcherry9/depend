@@ -40,8 +40,6 @@ func newResp(code int, msg, requestId string, data interface{}) *Result {
 	return resp
 }
 
-var jsonContentType = []string{"application/json; charset=utf-8"}
-
 func writeContentType(w http.ResponseWriter, value []string) {
 	header := w.Header()
 	if val := header["Content-Type"]; len(val) == 0 {
@@ -51,12 +49,15 @@ func writeContentType(w http.ResponseWriter, value []string) {
 
 func writeJSON(c *gin.Context, code int, res interface{}) {
 	c.Writer.WriteHeader(code)
+
+	jsonContentType := []string{"application/json; charset=utf-8"}
 	writeContentType(c.Writer, jsonContentType)
 
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	err := json.NewEncoder(c.Writer).Encode(res)
 	if err != nil {
 		fmt.Printf("json encode error, err = %s\n", err.Error())
+		http.Error(c.Writer, `{"code":500,"msg":"internal error"}`, http.StatusInternalServerError)
 	}
 }
 
@@ -67,7 +68,6 @@ func respJSONWithStatusCode(c *gin.Context, code int, msg string, data ...interf
 	}
 
 	resp := newResp(code, msg, GetRequestId(c), firstData)
-
 	writeJSON(c, code, resp)
 }
 
@@ -140,7 +140,7 @@ func Success(c *gin.Context, data ...interface{}) {
 	respJSONWith200(c, 0, "ok", data...)
 }
 
-// 由于业务已进入开发，为减少改动，不再修改Error函数，新增ErrorStatus。
+// 仅为兼容已编码业务，不推荐在新业务中使用，应该调ErrorStatus
 func Error(c *gin.Context, err *errcode.Error, data ...interface{}) {
 	respJSONWith200(c, err.Code(), err.Msg(), data...)
 }

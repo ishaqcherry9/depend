@@ -201,7 +201,7 @@ func Logging(opts ...Option) gin.HandlerFunc {
 			zap.Int64("time_us", time.Since(start).Microseconds()),
 			zap.Int("size", newWriter.body.Len()),
 			zap.ByteString("body", getResponseBody(newWriter.body, o.maxLength)),
-			reqIDField,
+			//reqIDField,
 		}
 		if printErrorBySpecifiedCodes[httpCode] {
 			o.log.WithOptions(zap.AddStacktrace(zap.PanicLevel)).Error(">>>>", fields...)
