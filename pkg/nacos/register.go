@@ -2,17 +2,18 @@ package nacos
 
 import (
 	"fmt"
+	"log"
+	"net"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/ishaqcherry9/depend/pkg/logger"
 	"github.com/ishaqcherry9/depend/pkg/netx"
 	"github.com/ishaqcherry9/depend/pkg/proc"
 	"github.com/ishaqcherry9/nacos_sdk_go/clients"
 	"github.com/ishaqcherry9/nacos_sdk_go/vo"
 	"go.uber.org/zap"
-	"log"
-	"net"
-	"os"
-	"strconv"
-	"strings"
 )
 
 func RegisterService(opts *Options) error {
@@ -61,9 +62,9 @@ func RegisterService(opts *Options) error {
 			Ephemeral:   true,
 		})
 		if err != nil {
-			logger.Info("hook deregister service error: ", zap.Error(err))
+			logger.Info(nil, "hook deregister service error: ", zap.Error(err))
 		} else {
-			logger.Info("hook deregistered service from nacos server.")
+			logger.Info(nil, "hook deregistered service from nacos server.")
 		}
 	})
 
@@ -96,10 +97,10 @@ func DeregisterService(opts *Options) error {
 		Ephemeral:   true,
 	})
 	if err != nil {
-		logger.Error("deregister service error.", zap.Error(err))
+		logger.Error(nil, "deregister service error.", zap.Error(err))
 		return err
 	} else {
-		logger.Info("deregistered service from nacos server.")
+		logger.Info(nil, "deregistered service from nacos server.")
 	}
 	return nil
 }

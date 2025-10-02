@@ -2,9 +2,10 @@ package nacos
 
 import (
 	"context"
-	"github.com/ishaqcherry9/depend/pkg/logger"
 	"sort"
 	"sync"
+
+	"github.com/ishaqcherry9/depend/pkg/logger"
 )
 
 const schemeName = "nacos"
@@ -42,7 +43,7 @@ func (resolver *AddressResolver) updateAddresses(endpoints []string) {
 
 	resolver.addresses = addresses
 
-	logger.Infof("[Address Resolver] Updated service: %s, addresses: %v", resolver.serviceName, addresses)
+	logger.Infof(nil, "[Address Resolver] Updated service: %s, addresses: %v", resolver.serviceName, addresses)
 }
 
 func (resolver *AddressResolver) GetAddresses() []string {
@@ -81,7 +82,7 @@ func (resolver *AddressResolver) Clear() {
 	defer resolver.mutex.Unlock()
 
 	resolver.addresses = make([]string, 0)
-	logger.Infof("[Address Resolver] Cleared addresses for service: %s", resolver.serviceName)
+	logger.Infof(nil, "[Address Resolver] Cleared addresses for service: %s", resolver.serviceName)
 }
 
 func PopulateServiceAddresses(ctx context.Context, resolver *AddressResolver, input <-chan []string) {
@@ -91,7 +92,7 @@ func PopulateServiceAddresses(ctx context.Context, resolver *AddressResolver, in
 		select {
 		case endpoints := <-input:
 			if len(endpoints) == 0 {
-				logger.Warnf("[Address Resolver] Received empty endpoints for service: %s", serviceName)
+				logger.Warnf(nil, "[Address Resolver] Received empty endpoints for service: %s", serviceName)
 				resolver.Clear()
 				continue
 			}
@@ -106,21 +107,21 @@ func PopulateServiceAddresses(ctx context.Context, resolver *AddressResolver, in
 			addresses := make([]string, 0, len(endpointSet))
 			for endpoint := range endpointSet {
 				addresses = append(addresses, endpoint)
-				logger.Infof("[Address Resolver] Preparing address for %s: %s", serviceName, endpoint)
+				logger.Infof(nil, "[Address Resolver] Preparing address for %s: %s", serviceName, endpoint)
 			}
 
 			if len(addresses) == 0 {
-				logger.Warnf("[Address Resolver] No valid addresses for service: %s", serviceName)
+				logger.Warnf(nil, "[Address Resolver] No valid addresses for service: %s", serviceName)
 				resolver.Clear()
 				continue
 			}
 
 			resolver.updateAddresses(addresses)
 
-			logger.Infof("[Address Resolver] Successfully updated %d addresses for service: %s", len(addresses), serviceName)
+			logger.Infof(nil, "[Address Resolver] Successfully updated %d addresses for service: %s", len(addresses), serviceName)
 
 		case <-ctx.Done():
-			logger.Infof("[Address Resolver] Address watcher for service %s has been finished", serviceName)
+			logger.Infof(nil, "[Address Resolver] Address watcher for service %s has been finished", serviceName)
 			return
 		}
 	}

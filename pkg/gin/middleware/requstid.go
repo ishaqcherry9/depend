@@ -90,6 +90,9 @@ func RequestID(opts ...RequestIDOption) gin.HandlerFunc {
 }
 
 func GCtxRequestID(c *gin.Context) string {
+	if c == nil {
+		return ""
+	}
 	if v, isExist := c.Get(ContextRequestIDKey); isExist {
 		if requestID, ok := v.(string); ok {
 			return requestID

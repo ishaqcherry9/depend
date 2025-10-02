@@ -2,8 +2,9 @@ package nacos
 
 import (
 	"fmt"
-	"github.com/ishaqcherry9/depend/pkg/logger"
 	"sync/atomic"
+
+	"github.com/ishaqcherry9/depend/pkg/logger"
 )
 
 type ServiceClient struct {
@@ -36,7 +37,7 @@ func NewServiceClient(serviceName string, clusters []string, nacosConf *NacosCon
 		serviceBuilder: builder,
 	}
 
-	logger.Infof("[Service Client] Created client for service: %s", serviceName)
+	logger.Infof(nil, "[Service Client] Created client for service: %s", serviceName)
 	return client, nil
 }
 

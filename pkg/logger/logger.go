@@ -61,7 +61,7 @@ func Init(opts ...Option) (*zap.Logger, error) {
 
 	defaultLogger = zapLog
 	defaultSugaredLogger = defaultLogger.Sugar()
-	Info(str)
+	Info(nil, str)
 
 	return defaultLogger, err
 }

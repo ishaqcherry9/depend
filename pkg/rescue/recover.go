@@ -2,9 +2,10 @@ package rescue
 
 import (
 	"context"
+	"runtime/debug"
+
 	"github.com/ishaqcherry9/depend/pkg/logger"
 	"go.uber.org/zap"
-	"runtime/debug"
 )
 
 func Recover(cleanups ...func()) {
@@ -13,7 +14,7 @@ func Recover(cleanups ...func()) {
 	}
 
 	if p := recover(); p != nil {
-		logger.Error("panic recovered",
+		logger.Error(nil, "panic recovered",
 			zap.Any("err", p),
 			zap.ByteString("stack", debug.Stack()),
 		)
@@ -26,6 +27,6 @@ func RecoverCtx(ctx context.Context, cleanups ...func()) {
 	}
 
 	if p := recover(); p != nil {
-		logger.Errorf("%+v\n%s", p, debug.Stack())
+		logger.Errorf(nil, "%+v\n%s", p, debug.Stack())
 	}
 }
