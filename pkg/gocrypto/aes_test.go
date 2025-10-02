@@ -231,20 +231,20 @@ func TestAesGCMEncryptDecrypt(t *testing.T) {
 			}
 
 			// Encrypt
-			ciphertext, err := encryptAES(tt.plaintext, tt.key)
+			ciphertext, err := AesEncrypt(tt.plaintext, WithAesKey(tt.key), WithAesModeGCM())
 			if err != nil {
-				t.Fatalf("encryptAES failed: %v", err)
+				t.Fatalf("AesEncrypt failed: %v", err)
 			}
 
 			// Verify ciphertext is not empty
-			if ciphertext == "" {
+			if len(ciphertext) == 0 {
 				t.Error("Ciphertext should not be empty")
 			}
 
 			// Decrypt
-			decrypted, err := decryptAES(ciphertext, tt.key)
+			decrypted, err := AesDecrypt(ciphertext, WithAesKey(tt.key), WithAesModeGCM())
 			if err != nil {
-				t.Fatalf("decryptAES failed: %v", err)
+				t.Fatalf("AesDecrypt failed: %v", err)
 			}
 
 			// Verify decrypted text matches original
@@ -260,30 +260,30 @@ func TestAesGCMNonceRandomness(t *testing.T) {
 	plaintext := []byte("Test message for nonce randomness")
 	key := testKey16
 
-	ciphertext1, err := encryptAES(plaintext, key)
+	ciphertext1, err := AesEncrypt(plaintext, WithAesKey(key), WithAesModeGCM())
 	if err != nil {
-		t.Fatalf("encryptAES failed: %v", err)
+		t.Fatalf("AesEncrypt failed: %v", err)
 	}
 
-	ciphertext2, err := encryptAES(plaintext, key)
+	ciphertext2, err := AesEncrypt(plaintext, WithAesKey(key), WithAesModeGCM())
 	if err != nil {
-		t.Fatalf("encryptAES failed: %v", err)
+		t.Fatalf("AesEncrypt failed: %v", err)
 	}
 
 	// Ciphertexts should be different due to random nonce
-	if ciphertext1 == ciphertext2 {
+	if string(ciphertext1) == string(ciphertext2) {
 		t.Error("Ciphertexts should be different due to random nonce")
 	}
 
 	// But both should decrypt to the same plaintext
-	decrypted1, err := decryptAES(ciphertext1, key)
+	decrypted1, err := AesDecrypt(ciphertext1, WithAesKey(key), WithAesModeGCM())
 	if err != nil {
-		t.Fatalf("decryptAES failed: %v", err)
+		t.Fatalf("AesDecrypt failed: %v", err)
 	}
 
-	decrypted2, err := decryptAES(ciphertext2, key)
+	decrypted2, err := AesDecrypt(ciphertext2, WithAesKey(key), WithAesModeGCM())
 	if err != nil {
-		t.Fatalf("decryptAES failed: %v", err)
+		t.Fatalf("AesDecrypt failed: %v", err)
 	}
 
 	if string(decrypted1) != string(plaintext) || string(decrypted2) != string(plaintext) {
@@ -373,31 +373,26 @@ func TestAesErrorCases(t *testing.T) {
 func TestAesGCMErrorCases(t *testing.T) {
 	t.Run("Invalid key length for GCM", func(t *testing.T) {
 		invalidKey := []byte("short") // Too short for AES
-		_, err := encryptAES(testPlaintext, invalidKey)
+		_, err := AesEncrypt(testPlaintext, WithAesKey(invalidKey), WithAesModeGCM())
 		if err == nil {
 			t.Error("Expected error for invalid key length")
 		}
 	})
 
-	t.Run("Invalid base64 for GCM decryption", func(t *testing.T) {
-		_, err := decryptAES("invalid base64", testKey16)
-		if err == nil {
-			t.Error("Expected error for invalid base64")
-		}
-	})
-
 	t.Run("Corrupted GCM ciphertext", func(t *testing.T) {
 		// Encrypt first
-		ciphertext, err := encryptAES(testPlaintext, testKey16)
+		ciphertext, err := AesEncrypt(testPlaintext, WithAesKey(testKey16), WithAesModeGCM())
 		if err != nil {
-			t.Fatalf("encryptAES failed: %v", err)
+			t.Fatalf("AesEncrypt failed: %v", err)
 		}
 
-		// Corrupt the base64 string
-		ciphertext = ciphertext[:len(ciphertext)-1] + "X"
+		// Corrupt the ciphertext by modifying a byte
+		if len(ciphertext) > 12 {
+			ciphertext[0] ^= 0xFF
+		}
 
-		// Try to decrypt
-		_, err = decryptAES(ciphertext, testKey16)
+		// Try to decrypt - should fail due to authentication failure
+		_, err = AesDecrypt(ciphertext, WithAesKey(testKey16), WithAesModeGCM())
 		if err == nil {
 			t.Error("Expected error for corrupted GCM ciphertext")
 		}
@@ -405,17 +400,138 @@ func TestAesGCMErrorCases(t *testing.T) {
 
 	t.Run("Wrong key for GCM decryption", func(t *testing.T) {
 		// Encrypt with one key
-		ciphertext, err := encryptAES(testPlaintext, testKey16)
+		ciphertext, err := AesEncrypt(testPlaintext, WithAesKey(testKey16), WithAesModeGCM())
 		if err != nil {
-			t.Fatalf("encryptAES failed: %v", err)
+			t.Fatalf("AesEncrypt failed: %v", err)
 		}
 
 		// Try to decrypt with different key
-		_, err = decryptAES(ciphertext, testKey24)
+		_, err = AesDecrypt(ciphertext, WithAesKey(testKey24), WithAesModeGCM())
 		if err == nil {
 			t.Error("Expected error for wrong GCM decryption key")
 		}
 	})
+
+	t.Run("Invalid ciphertext length", func(t *testing.T) {
+		// Try to decrypt with too short ciphertext (less than nonce size)
+		shortCiphertext := []byte("short")
+		_, err := AesDecrypt(shortCiphertext, WithAesKey(testKey16), WithAesModeGCM())
+		if err == nil {
+			t.Error("Expected error for too short ciphertext")
+		}
+	})
+}
+
+func TestAesGCMAdditionalData(t *testing.T) {
+	// Test GCM with additional authenticated data (AAD)
+	// Note: Current implementation doesn't support AAD, but we test the basic functionality
+	plaintext := []byte("Test message with additional data")
+	key := testKey16
+
+	// Encrypt
+	ciphertext, err := AesEncrypt(plaintext, WithAesKey(key), WithAesModeGCM())
+	if err != nil {
+		t.Fatalf("AesEncrypt failed: %v", err)
+	}
+
+	// Decrypt
+	decrypted, err := AesDecrypt(ciphertext, WithAesKey(key), WithAesModeGCM())
+	if err != nil {
+		t.Fatalf("AesDecrypt failed: %v", err)
+	}
+
+	if string(decrypted) != string(plaintext) {
+		t.Errorf("Decrypted text doesn't match original. Got: %s, Want: %s", string(decrypted), string(plaintext))
+	}
+}
+
+func TestAesGCMCrossCompatibility(t *testing.T) {
+	// Test that GCM encryption/decryption works consistently across multiple calls
+	plaintext := []byte("Cross compatibility test message")
+	key := testKey32
+
+	// Perform multiple encrypt/decrypt cycles
+	for i := 0; i < 10; i++ {
+		ciphertext, err := AesEncrypt(plaintext, WithAesKey(key), WithAesModeGCM())
+		if err != nil {
+			t.Fatalf("AesEncrypt failed on iteration %d: %v", i, err)
+		}
+
+		decrypted, err := AesDecrypt(ciphertext, WithAesKey(key), WithAesModeGCM())
+		if err != nil {
+			t.Fatalf("AesDecrypt failed on iteration %d: %v", i, err)
+		}
+
+		if string(decrypted) != string(plaintext) {
+			t.Errorf("Decrypted text doesn't match original on iteration %d. Got: %s, Want: %s", i, string(decrypted), string(plaintext))
+		}
+	}
+}
+
+func TestAesGCMNonceUniqueness(t *testing.T) {
+	// Test that nonces are unique across multiple encryptions
+	plaintext := []byte("Nonce uniqueness test")
+	key := testKey16
+
+	nonces := make(map[string]bool)
+
+	// Perform 100 encryptions and collect nonces
+	for i := 0; i < 100; i++ {
+		ciphertext, err := AesEncrypt(plaintext, WithAesKey(key), WithAesModeGCM())
+		if err != nil {
+			t.Fatalf("AesEncrypt failed on iteration %d: %v", i, err)
+		}
+
+		// Extract nonce (last 12 bytes)
+		if len(ciphertext) < 12 {
+			t.Fatalf("Ciphertext too short on iteration %d", i)
+		}
+		nonce := string(ciphertext[len(ciphertext)-12:])
+
+		if nonces[nonce] {
+			t.Errorf("Duplicate nonce found on iteration %d", i)
+		}
+		nonces[nonce] = true
+	}
+
+	// We should have 100 unique nonces
+	if len(nonces) != 100 {
+		t.Errorf("Expected 100 unique nonces, got %d", len(nonces))
+	}
+}
+
+func TestAesGCMWithDifferentKeySizes(t *testing.T) {
+	// Test GCM with all supported AES key sizes
+	plaintext := []byte("Test message for different key sizes")
+
+	keySizes := []struct {
+		name string
+		key  []byte
+	}{
+		{"AES-128", testKey16},
+		{"AES-192", testKey24},
+		{"AES-256", testKey32},
+	}
+
+	for _, ks := range keySizes {
+		t.Run(ks.name, func(t *testing.T) {
+			// Encrypt
+			ciphertext, err := AesEncrypt(plaintext, WithAesKey(ks.key), WithAesModeGCM())
+			if err != nil {
+				t.Fatalf("AesEncrypt failed for %s: %v", ks.name, err)
+			}
+
+			// Decrypt
+			decrypted, err := AesDecrypt(ciphertext, WithAesKey(ks.key), WithAesModeGCM())
+			if err != nil {
+				t.Fatalf("AesDecrypt failed for %s: %v", ks.name, err)
+			}
+
+			if string(decrypted) != string(plaintext) {
+				t.Errorf("Decrypted text doesn't match original for %s. Got: %s, Want: %s", ks.name, string(decrypted), string(plaintext))
+			}
+		})
+	}
 }
 
 func TestAesOptions(t *testing.T) {
@@ -553,7 +669,7 @@ func BenchmarkAesGCMEncrypt(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := encryptAES(plaintext, testKey16)
+		_, err := AesEncrypt(plaintext, WithAesKey(testKey16), WithAesModeGCM())
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -564,14 +680,14 @@ func BenchmarkAesGCMDecrypt(b *testing.B) {
 	plaintext := make([]byte, 1024)
 	rand.Read(plaintext)
 
-	ciphertext, err := encryptAES(plaintext, testKey16)
+	ciphertext, err := AesEncrypt(plaintext, WithAesKey(testKey16), WithAesModeGCM())
 	if err != nil {
 		b.Fatal(err)
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := decryptAES(ciphertext, testKey16)
+		_, err := AesDecrypt(ciphertext, WithAesKey(testKey16), WithAesModeGCM())
 		if err != nil {
 			b.Fatal(err)
 		}

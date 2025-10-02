@@ -21,40 +21,29 @@ func NewGCMCipher(block cipher.Block) (Cipher, error) {
 }
 
 // Encrypt encrypts the plaintext using AES-GCM
-// Returns base64 encoded string with format: base64(ciphertext + nonce)
+// Returns ciphertext with nonce appended: ciphertext + nonce
 func (g *gcmCipher) Encrypt(plaintext []byte) []byte {
 	// Generate random 12-byte nonce
 	nonce := make([]byte, 12)
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		// If random generation fails, we can't proceed
 		return nil
 	}
 
-	// Encrypt the data
+	// Encrypt the data (GCM can handle empty plaintext)
 	ciphertext := g.aesgcm.Seal(nil, nonce, plaintext, nil)
 
 	// Append nonce to ciphertext
 	result := append(ciphertext, nonce...)
 
-	// // Return base64 encoded result
-	// encoded := make([]byte, base64.StdEncoding.EncodedLen(len(result)))
-	// base64.StdEncoding.Encode(encoded, result)
 	return result
 }
 
-// Decrypt decrypts the base64 encoded ciphertext using AES-GCM
-// Expects format: base64(ciphertext + nonce)
+// Decrypt decrypts the ciphertext using AES-GCM
+// Expects format: ciphertext + nonce
 func (g *gcmCipher) Decrypt(ciphertext []byte) []byte {
-	// // Decode base64
-	// decoded := make([]byte, base64.StdEncoding.DecodedLen(len(ciphertext)))
-	// n, err := base64.StdEncoding.Decode(decoded, ciphertext)
-	// if err != nil {
-	// 	return nil
-	// }
-	// decoded = decoded[:n]
-
 	// Extract nonce (last 12 bytes)
 	if len(ciphertext) < 12 {
+		// Return nil to indicate failure (different from empty slice)
 		return nil
 	}
 	nonce := ciphertext[len(ciphertext)-12:]
@@ -63,8 +52,14 @@ func (g *gcmCipher) Decrypt(ciphertext []byte) []byte {
 	// Decrypt the data
 	plaintext, err := g.aesgcm.Open(nil, nonce, ciphertextOnly, nil)
 	if err != nil {
+		// Return nil to indicate authentication failure (different from empty slice)
 		return nil
 	}
 
+	// Return the plaintext (which can be empty for empty input)
+	// If plaintext is nil (from aesgcm.Open), return empty slice instead
+	if plaintext == nil {
+		return []byte{}
+	}
 	return plaintext
 }
