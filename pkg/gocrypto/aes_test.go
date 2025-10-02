@@ -3,6 +3,7 @@ package gocrypto
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"testing"
 )
 
@@ -190,6 +191,24 @@ func TestAesEncryptHexDecryptHex(t *testing.T) {
 	}
 }
 
+func TestAesGCMEncryptDecrypt1(t *testing.T) {
+
+	plaintext := []byte("yunzhou测试加密消息")
+	keyText := "koi29a83idakguqjq29asd9asd8a7jhq"
+	key := []byte(keyText)
+
+	ciphertext, err := AesEncrypt(plaintext, WithAesKey(key), WithAesModeGCM())
+	if err != nil {
+		t.Fatalf("AesEncrypt failed: %v", err)
+	}
+
+	decrypted, err := AesDecrypt(ciphertext, WithAesKey(key), WithAesModeGCM())
+	if err != nil {
+		t.Fatalf("AesDecrypt failed: %v", err)
+	}
+
+	fmt.Println("decrypted", string(decrypted))
+}
 func TestAesGCMEncryptDecrypt(t *testing.T) {
 	tests := []struct {
 		name      string
