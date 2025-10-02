@@ -1,13 +1,8 @@
 package gocrypto
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/hex"
 	"errors"
-	"io"
 
 	"github.com/ishaqcherry9/depend/pkg/gocrypto/wcipher"
 )
@@ -66,6 +61,8 @@ func getCipherMode(mode string) (wcipher.CipherMode, error) {
 		cipherMode = wcipher.NewCFBMode()
 	case modeCTR:
 		cipherMode = wcipher.NewCTRMode()
+	case modeGCM:
+		cipherMode = wcipher.NewGCMMode()
 	default:
 		return nil, errors.New("unknown mode = " + mode)
 	}
@@ -101,64 +98,64 @@ func aesDecryptByMode(mode string, cipherData []byte, key []byte) ([]byte, error
 	return cip.Decrypt(cipherData), nil
 }
 
-// AES-GCM 加密
-func encryptAES(plaintext []byte, key []byte) (string, error) {
-	// 随机生成12字节nonce
-	nonce := make([]byte, 12)
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return "", err
-	}
-	// Create a new AES cipher block
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return "", err
-	}
+// // AES-GCM 加密
+// func encryptAES(plaintext []byte, key []byte) (string, error) {
+// 	// 随机生成12字节nonce
+// 	nonce := make([]byte, 12)
+// 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+// 		return "", err
+// 	}
+// 	// Create a new AES cipher block
+// 	block, err := aes.NewCipher(key)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	// Create a new GCM cipher mode
-	aesgcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return "", err
-	}
+// 	// Create a new GCM cipher mode
+// 	aesgcm, err := cipher.NewGCM(block)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	// Encrypt the data
-	// The additionalData parameter can be used to authenticate additional data that is not encrypted
-	ciphertext := aesgcm.Seal(nil, nonce, plaintext, nil)
+// 	// Encrypt the data
+// 	// The additionalData parameter can be used to authenticate additional data that is not encrypted
+// 	ciphertext := aesgcm.Seal(nil, nonce, plaintext, nil)
 
-	// 拼接nonce在密文后面返回
-	result := append(ciphertext, nonce...)
-	// 返回base64编码的密文
-	return base64.StdEncoding.EncodeToString(result), nil
+// 	// 拼接nonce在密文后面返回
+// 	result := append(ciphertext, nonce...)
+// 	// 返回base64编码的密文
+// 	return base64.StdEncoding.EncodeToString(result), nil
 
-}
+// }
 
-// AES-GCM 解密
-func decryptAES(plaintextEncoded string, key []byte) ([]byte, error) {
-	// 解码base64编码的密文
-	ciphertext, err := base64.StdEncoding.DecodeString(plaintextEncoded)
-	if err != nil {
-		return nil, err
-	}
-	// 提取nonce
-	nonce := ciphertext[len(ciphertext)-12:]
-	ciphertext = ciphertext[:len(ciphertext)-12]
-	// Create a new AES cipher block
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
+// // AES-GCM 解密
+// func decryptAES(plaintextEncoded string, key []byte) ([]byte, error) {
+// 	// 解码base64编码的密文
+// 	ciphertext, err := base64.StdEncoding.DecodeString(plaintextEncoded)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	// 提取nonce
+// 	nonce := ciphertext[len(ciphertext)-12:]
+// 	ciphertext = ciphertext[:len(ciphertext)-12]
+// 	// Create a new AES cipher block
+// 	block, err := aes.NewCipher(key)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	// Create a new GCM cipher mode
-	aesgcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
+// 	// Create a new GCM cipher mode
+// 	aesgcm, err := cipher.NewGCM(block)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	// Decrypt the data
-	// The same nonce must be used for decryption as for encryption
-	plaintext, err := aesgcm.Open(nil, nonce, ciphertext, nil)
-	if err != nil {
-		return nil, err
-	}
+// 	// Decrypt the data
+// 	// The same nonce must be used for decryption as for encryption
+// 	plaintext, err := aesgcm.Open(nil, nonce, ciphertext, nil)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return plaintext, nil
-}
+// 	return plaintext, nil
+// }
