@@ -3,6 +3,9 @@ package captcha
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/ishaqcherry9/depend/pkg/gin/middleware"
+	"github.com/ishaqcherry9/depend/pkg/krand"
+	"net/http"
 	"testing"
 )
 
@@ -17,8 +20,20 @@ func TestYunDunCheck(t *testing.T) {
 		Validate:  validate,
 	}
 
-	c := gin.Context{}
-	resultBool, err := YunDunCheck(&c, param)
+	requestID := krand.String(krand.R_All, 20)
+
+	c := &gin.Context{
+		Request: &http.Request{
+			Header: http.Header{
+				middleware.HeaderXRequestIDKey: []string{requestID},
+			},
+		},
+	}
+
+	c.Set(middleware.ContextRequestIDKey, requestID)
+	ctx := middleware.WrapCtx(c)
+	
+	resultBool, err := YunDunCheck(ctx, param)
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
