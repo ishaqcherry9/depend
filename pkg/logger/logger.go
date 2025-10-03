@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -61,7 +62,7 @@ func Init(opts ...Option) (*zap.Logger, error) {
 
 	defaultLogger = zapLog
 	defaultSugaredLogger = defaultLogger.Sugar()
-	Info(nil, str)
+	Info(context.Background(), str)
 
 	return defaultLogger, err
 }

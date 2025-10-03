@@ -67,22 +67,22 @@ func (c *DefaultCache) Set(ctx context.Context, cacheKey string, cacheValue g.Ma
 func (c *DefaultCache) Get(ctx context.Context, cacheKey string) (g.Map, error) {
 	dataVar, err := c.Cache.Get(ctx, c.PreKey+cacheKey)
 	if err != nil {
-		logger.Error(nil, "cache.Get error", logger.Err(err), logger.String("key", c.PreKey+cacheKey))
+		logger.Error(ctx, "cache.Get error", logger.Err(err), logger.String("key", c.PreKey+cacheKey))
 		return nil, err
 	}
 	if dataVar.IsNil() {
-		logger.Warn(nil, "cache.Get dataVar is nil", logger.String("key", c.PreKey+cacheKey))
+		logger.Warn(ctx, "cache.Get dataVar is nil", logger.String("key", c.PreKey+cacheKey))
 		return nil, nil
 	}
 	//return dataVar.Map(), nil
 	// 打印看看实际获取到的是什么
-	logger.Debug(nil, "cache.Get raw data",
+	logger.Debug(ctx, "cache.Get raw data",
 		logger.String("key", c.PreKey+cacheKey),
 		logger.String("type", dataVar.String()),
 		logger.Any("value", dataVar.Val()))
 
 	result := dataVar.Map()
-	logger.Debug(nil, "cache.Get converted map",
+	logger.Debug(ctx, "cache.Get converted map",
 		logger.String("key", c.PreKey+cacheKey),
 		logger.Any("map", result))
 
@@ -100,7 +100,7 @@ func (c *DefaultCache) Remove(ctx context.Context, cacheKey string) error {
 func (c *DefaultCache) initFileCache(ctx context.Context) {
 	fileName := gstr.Replace(c.PreKey, ":", "_") + CacheModeFileDat
 	file := gfile.Temp(fileName)
-	logger.Debug(nil, "file cache init", logger.String("file", file))
+	logger.Debug(ctx, "file cache init", logger.String("file", file))
 	if !gfile.Exists(file) {
 		return
 	}
@@ -119,10 +119,10 @@ func (c *DefaultCache) writeFileCache(ctx context.Context) {
 	file := gfile.Temp(fileName)
 	data, e := c.Cache.Data(ctx)
 	if e != nil {
-		logger.Error(nil, "[CToken]cache writeFileCache data error", logger.Err(e))
+		logger.Error(ctx, "[CToken]cache writeFileCache data error", logger.Err(e))
 	}
 	e = gfile.PutContents(file, gjson.New(data).MustToJsonString())
 	if e != nil {
-		logger.Error(nil, "[CToken]cache writeFileCache put error", logger.Err(e))
+		logger.Error(ctx, "[CToken]cache writeFileCache put error", logger.Err(e))
 	}
 }

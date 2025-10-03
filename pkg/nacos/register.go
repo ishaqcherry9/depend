@@ -1,6 +1,7 @@
 package nacos
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -62,9 +63,9 @@ func RegisterService(opts *Options) error {
 			Ephemeral:   true,
 		})
 		if err != nil {
-			logger.Info(nil, "hook deregister service error: ", zap.Error(err))
+			logger.Info(context.Background(), "hook deregister service error: ", zap.Error(err))
 		} else {
-			logger.Info(nil, "hook deregistered service from nacos server.")
+			logger.Info(context.Background(), "hook deregistered service from nacos server.")
 		}
 	})
 
@@ -97,10 +98,10 @@ func DeregisterService(opts *Options) error {
 		Ephemeral:   true,
 	})
 	if err != nil {
-		logger.Error(nil, "deregister service error.", zap.Error(err))
+		logger.Error(context.Background(), "deregister service error.", zap.Error(err))
 		return err
 	} else {
-		logger.Info(nil, "deregistered service from nacos server.")
+		logger.Info(context.Background(), "deregistered service from nacos server.")
 	}
 	return nil
 }

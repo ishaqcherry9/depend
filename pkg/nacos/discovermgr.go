@@ -1,6 +1,7 @@
 package nacos
 
 import (
+	"context"
 	"fmt"
 	"sync/atomic"
 
@@ -37,7 +38,7 @@ func NewServiceClient(serviceName string, clusters []string, nacosConf *NacosCon
 		serviceBuilder: builder,
 	}
 
-	logger.Infof(nil, "[Service Client] Created client for service: %s", serviceName)
+	logger.Infof(context.Background(), "[Service Client] Created client for service: %s", serviceName)
 	return client, nil
 }
 

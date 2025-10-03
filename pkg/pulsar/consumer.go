@@ -43,7 +43,7 @@ func (c *consumer) Receive(ctx context.Context) (*Message, error) {
 
 func (c *consumer) Consume(ctx context.Context, handleFn HandleMessageFn) error {
 	pool := workerpool.NewWorkerFIFOPool(10, func(err interface{}) {
-		logger.Error(nil, "message panic", zap.Any("panic", err))
+		logger.Error(ctx, "message panic", zap.Any("panic", err))
 	})
 	defer workerpool.FIFOAntsRelease(pool)
 
@@ -65,7 +65,7 @@ func (c *consumer) Consume(ctx context.Context, handleFn HandleMessageFn) error 
 
 			if err != nil {
 				c.internal.Nack(consumerMsg.Message)
-				logger.Error(nil, "consumer task submit failed", zap.Error(err))
+				logger.Error(ctx, "consumer task submit failed", zap.Error(err))
 			}
 		}
 	}

@@ -1,6 +1,7 @@
 package workerpool
 
 import (
+	"context"
 	"runtime/debug"
 	"time"
 
@@ -31,7 +32,7 @@ func NewWorkerFIFOPool(size int, fn ...func(interface{})) *WorkerFIFOPool {
 	}
 	pool, err := ants.NewPool(size, ants.WithOptions(*opts))
 	if err != nil {
-		logger.Fatal(nil, "ants new pool failed", zap.Error(err))
+		logger.Fatal(context.Background(), "ants new pool failed", zap.Error(err))
 	}
 	return pool
 }
@@ -47,7 +48,7 @@ func NewWorkerCustomFIFOPool(size int, expiryDuration int64, maxBlockingTasks in
 	}
 	pool, err := ants.NewPool(size, ants.WithOptions(*opts))
 	if err != nil {
-		logger.Fatal(nil, "ants new pool failed", zap.Error(err))
+		logger.Fatal(context.Background(), "ants new pool failed", zap.Error(err))
 	}
 	return pool
 }
@@ -60,7 +61,7 @@ func NewWorkerLIFOPool(size int, fn ...func(interface{})) *WorkerLIFOPool {
 	}
 	pool, err := ants.NewPool(size, ants.WithOptions(*opts))
 	if err != nil {
-		logger.Fatal(nil, "ants new pool failed", zap.Error(err))
+		logger.Fatal(context.Background(), "ants new pool failed", zap.Error(err))
 	}
 	return pool
 }
@@ -76,7 +77,7 @@ func NewWorkerCustomLIFOPool(size int, expiryDuration int64, maxBlockingTasks in
 	}
 	pool, err := ants.NewPool(size, ants.WithOptions(*opts))
 	if err != nil {
-		logger.Fatal(nil, "ants new pool failed", zap.Error(err))
+		logger.Fatal(context.Background(), "ants new pool failed", zap.Error(err))
 	}
 	return pool
 }
@@ -110,7 +111,7 @@ func defaultWorkerPoolOpts() *ants.Options {
 		PreAlloc:         preAlloc,
 		Nonblocking:      nonblocking,
 		PanicHandler: func(err interface{}) {
-			logger.Errorf(nil, "goroutine pool panic: %v\n%s", err, debug.Stack())
+			logger.Errorf(context.Background(), "goroutine pool panic: %v\n%s", err, debug.Stack())
 		},
 	}
 

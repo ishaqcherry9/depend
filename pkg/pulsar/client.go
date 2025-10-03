@@ -1,6 +1,7 @@
 package pulsar
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -41,7 +42,7 @@ func InitClient(config *ClientConfig) {
 
 		internal, err := pulsar.NewClient(options)
 		if err != nil {
-			logger.Fatal(nil, "pulsar client init failed", zap.Error(err))
+			logger.Fatal(context.Background(), "pulsar client init failed", zap.Error(err))
 		}
 		gClient = &client{internal: internal}
 	})
@@ -49,7 +50,7 @@ func InitClient(config *ClientConfig) {
 
 func GetClient() Client {
 	if gClient == nil {
-		logger.Fatal(nil, "pulsar client get failed")
+		logger.Fatal(context.Background(), "pulsar client get failed")
 	}
 	return gClient
 }

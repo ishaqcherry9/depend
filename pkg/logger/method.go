@@ -1,53 +1,53 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	middleware "github.com/ishaqcherry9/depend/pkg/gin/middleware"
 	"go.uber.org/zap"
 )
 
-func Debug(c *gin.Context, msg string, fields ...Field) {
-	fields = append(fields, zap.String(middleware.ContextRequestIDKey, middleware.GCtxRequestID(c)))
+func Debug(c context.Context, msg string, fields ...Field) {
+	fields = append(fields, zap.String(middleware.ContextRequestIDKey, middleware.CtxRequestID(c)))
 	getLogger().Debug(msg, fields...)
 }
 
-func Info(c *gin.Context, msg string, fields ...Field) {
-	fields = append(fields, zap.String(middleware.ContextRequestIDKey, middleware.GCtxRequestID(c)))
+func Info(c context.Context, msg string, fields ...Field) {
+	fields = append(fields, zap.String(middleware.ContextRequestIDKey, middleware.CtxRequestID(c)))
 	getLogger().Info(msg, fields...)
 }
 
-func Warn(c *gin.Context, msg string, fields ...Field) {
-	fields = append(fields, zap.String(middleware.ContextRequestIDKey, middleware.GCtxRequestID(c)))
+func Warn(c context.Context, msg string, fields ...Field) {
+	fields = append(fields, zap.String(middleware.ContextRequestIDKey, middleware.CtxRequestID(c)))
 	getLogger().Warn(msg, fields...)
 }
 
-func Error(c *gin.Context, msg string, fields ...Field) {
-	fields = append(fields, zap.String(middleware.ContextRequestIDKey, middleware.GCtxRequestID(c)))
+func Error(c context.Context, msg string, fields ...Field) {
+	fields = append(fields, zap.String(middleware.ContextRequestIDKey, middleware.CtxRequestID(c)))
 	getLogger().Error(msg, fields...)
 }
 
-func Panic(c *gin.Context, msg string, fields ...Field) {
-	fields = append(fields, zap.String(middleware.ContextRequestIDKey, middleware.GCtxRequestID(c)))
+func Panic(c context.Context, msg string, fields ...Field) {
+	fields = append(fields, zap.String(middleware.ContextRequestIDKey, middleware.CtxRequestID(c)))
 	getLogger().Panic(msg, fields...)
 }
 
-func Fatal(c *gin.Context, msg string, fields ...Field) {
-	fields = append(fields, zap.String(middleware.ContextRequestIDKey, middleware.GCtxRequestID(c)))
+func Fatal(c context.Context, msg string, fields ...Field) {
+	fields = append(fields, zap.String(middleware.ContextRequestIDKey, middleware.CtxRequestID(c)))
 	getLogger().Fatal(msg, fields...)
 }
 
-func Debugf(c *gin.Context, format string, a ...interface{}) {
+func Debugf(c context.Context, format string, a ...interface{}) {
 	msg, fields := getMessage(c, format, a...)
 	getLogger().Debug(msg, fields...)
 }
 
 // getMessage format with Sprint, Sprintf, or neither.
-func getMessage(c *gin.Context, template string, fmtArgs ...interface{}) (string, []Field) {
+func getMessage(c context.Context, template string, fmtArgs ...interface{}) (string, []Field) {
 	fields := make([]Field, 0, 1)
-	fields = append(fields, zap.String(middleware.ContextRequestIDKey, middleware.GCtxRequestID(c)))
+	fields = append(fields, zap.String(middleware.ContextRequestIDKey, middleware.CtxRequestID(c)))
 	if len(fmtArgs) == 0 {
 		return template, fields
 	}
@@ -64,23 +64,23 @@ func getMessage(c *gin.Context, template string, fmtArgs ...interface{}) (string
 	return fmt.Sprint(fmtArgs...), fields
 }
 
-func Infof(c *gin.Context, format string, a ...interface{}) {
+func Infof(c context.Context, format string, a ...interface{}) {
 	msg, fields := getMessage(c, format, a...)
 	getLogger().Info(msg, fields...)
 }
 
-func Warnf(c *gin.Context, format string, a ...interface{}) {
+func Warnf(c context.Context, format string, a ...interface{}) {
 	msg, fields := getMessage(c, format, a...)
 	getSugaredLogger().Warnf(format, a...)
 	getLogger().Warn(msg, fields...)
 }
 
-func Errorf(c *gin.Context, format string, a ...interface{}) {
+func Errorf(c context.Context, format string, a ...interface{}) {
 	msg, fields := getMessage(c, format, a...)
 	getLogger().Error(msg, fields...)
 }
 
-func Fatalf(c *gin.Context, format string, a ...interface{}) {
+func Fatalf(c context.Context, format string, a ...interface{}) {
 	msg, fields := getMessage(c, format, a...)
 	getLogger().Fatal(msg, fields...)
 }

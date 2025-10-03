@@ -53,7 +53,7 @@ func NewDefaultTokenByConfig(options Options, redisCli *goredis.Client) Token {
 		Codec:   NewDefaultCodec(options.TokenDelimiter, options.EncryptKey),
 		Cache:   NewDefaultCache(options.CacheMode, options.CachePreKey, options.Timeout, redisCli),
 	}
-	logger.Debug(nil, "token options", logger.String("conf", options.String()))
+	logger.Debug(context.Background(), "token options", logger.String("conf", options.String()))
 	return cToken
 }
 
@@ -147,11 +147,11 @@ func (c *CToken) Validate(ctx context.Context, token string) (userKey string, er
 
 	userCache, err := c.Cache.Get(ctx, cacheKey)
 	if err != nil {
-		logger.Error(nil, "Validate cache.Get error", logger.Err(err), logger.String("cacheKey", cacheKey))
+		logger.Error(ctx, "Validate cache.Get error", logger.Err(err), logger.String("cacheKey", cacheKey))
 		return
 	}
 	if userCache == nil {
-		logger.Warn(nil, "Validate userCache is nil", logger.String("userKey", userKey))
+		logger.Warn(ctx, "Validate userCache is nil", logger.String("userKey", userKey))
 		err = gerror.NewCode(gcode.CodeInternalError, MsgErrDataEmpty)
 		return
 	}
@@ -160,7 +160,7 @@ func (c *CToken) Validate(ctx context.Context, token string) (userKey string, er
 		return
 	}
 
-	logger.Debug(nil, "Validate userCache",
+	logger.Debug(ctx, "Validate userCache",
 		logger.String("userKey", userKey),
 		logger.Any("cache", userCache),
 		logger.String("token", token))

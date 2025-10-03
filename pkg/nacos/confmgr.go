@@ -1,6 +1,7 @@
 package nacos
 
 import (
+	"context"
 	"sync"
 
 	"github.com/ishaqcherry9/depend/pkg/conf"
@@ -44,19 +45,19 @@ func MustLoad(nacosConfigFilePath string, v interface{}, f interface{}) *NacosCo
 
 	err = conf.Parse(nacosConfigFilePath, &nacosConfig)
 	if err != nil {
-		logger.Fatal(nil, "load nacos config failed", zap.Error(err))
+		logger.Fatal(context.Background(), "load nacos config failed", zap.Error(err))
 	}
 	err = nacosConfig.InitConfigClient()
 	if err != nil {
-		logger.Fatal(nil, "nacos config init failed", zap.Error(err))
+		logger.Fatal(context.Background(), "nacos config init failed", zap.Error(err))
 	}
 	config, err = nacosConfig.GetConfig()
 	if err != nil {
-		logger.Fatal(nil, "nacos get config failed", zap.Error(err))
+		logger.Fatal(context.Background(), "nacos get config failed", zap.Error(err))
 	}
 	err = conf.ParseConfigData([]byte(config), "yaml", v)
 	if err != nil {
-		logger.Fatal(nil, "load config failed", zap.Error(err))
+		logger.Fatal(context.Background(), "load config failed", zap.Error(err))
 	}
 
 	if nacosConfig.TimeoutMs == 0 {
@@ -96,7 +97,7 @@ func (conf *NacosConf) InitConfigClient() (err error) {
 		)
 
 		if err != nil {
-			logger.Fatal(nil, "new config client failed.", zap.Error(err))
+			logger.Fatal(context.Background(), "new config client failed.", zap.Error(err))
 		}
 	})
 	return

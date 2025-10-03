@@ -3,6 +3,7 @@
 package proc
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"sync"
@@ -69,7 +70,7 @@ func WrapUp() {
 func gracefulStop(signals chan os.Signal, sig syscall.Signal) {
 	signal.Stop(signals)
 
-	logger.Infof(nil, "Got signal %d, shutting down...", sig)
+	logger.Infof(context.Background(), "Got signal %d, shutting down...", sig)
 	go wrapUpListeners.notifyListeners()
 
 	time.Sleep(wrapUpTime)
@@ -80,7 +81,7 @@ func gracefulStop(signals chan os.Signal, sig syscall.Signal) {
 	shutdownLock.Unlock()
 
 	time.Sleep(remainingTime)
-	logger.Infof(nil, "Still alive after %v, going to force kill the process...", waitTime)
+	logger.Infof(context.Background(), "Still alive after %v, going to force kill the process...", waitTime)
 	_ = syscall.Kill(syscall.Getpid(), sig)
 }
 

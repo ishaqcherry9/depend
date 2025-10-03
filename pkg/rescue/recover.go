@@ -14,7 +14,7 @@ func Recover(cleanups ...func()) {
 	}
 
 	if p := recover(); p != nil {
-		logger.Error(nil, "panic recovered",
+		logger.Error(context.Background(), "panic recovered",
 			zap.Any("err", p),
 			zap.ByteString("stack", debug.Stack()),
 		)
@@ -27,6 +27,6 @@ func RecoverCtx(ctx context.Context, cleanups ...func()) {
 	}
 
 	if p := recover(); p != nil {
-		logger.Errorf(nil, "%+v\n%s", p, debug.Stack())
+		logger.Errorf(ctx, "%+v\n%s", p, debug.Stack())
 	}
 }
