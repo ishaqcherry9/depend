@@ -98,3 +98,21 @@ func (ctr *ctrCipherModel) Cipher(block cipher.Block, iv []byte) Cipher {
 	decrypter := cipher.NewCTR(block, iv)
 	return NewStreamCipher(encrypter, decrypter)
 }
+
+type gcmCipherModel struct {
+	cipherMode
+}
+
+func NewGCMMode() CipherMode {
+	return &gcmCipherModel{}
+}
+
+func (gcm *gcmCipherModel) Cipher(block cipher.Block, iv []byte) Cipher {
+	// GCM mode doesn't use IV in the traditional sense, and doesn't use padding
+	// The nonce is generated randomly for each encryption
+	cipher, err := NewGCMCipher(block)
+	if err != nil {
+		return nil
+	}
+	return cipher
+}

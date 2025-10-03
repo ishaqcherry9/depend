@@ -7,6 +7,7 @@ const (
 	modeCBC = "CBC"
 	modeCFB = "CFB"
 	modeCTR = "CTR"
+	modeGCM = "GCM"
 )
 
 var (
@@ -66,6 +67,12 @@ func WithAesModeCFB() AesOption {
 func WithAesModeCTR() AesOption {
 	return func(o *aesOptions) {
 		o.mode = modeCTR
+	}
+}
+
+func WithAesModeGCM() AesOption {
+	return func(o *aesOptions) {
+		o.mode = modeGCM
 	}
 }
 

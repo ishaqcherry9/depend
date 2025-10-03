@@ -61,6 +61,8 @@ func getCipherMode(mode string) (wcipher.CipherMode, error) {
 		cipherMode = wcipher.NewCFBMode()
 	case modeCTR:
 		cipherMode = wcipher.NewCTRMode()
+	case modeGCM:
+		cipherMode = wcipher.NewGCMMode()
 	default:
 		return nil, errors.New("unknown mode = " + mode)
 	}
