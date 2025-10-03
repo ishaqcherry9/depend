@@ -140,13 +140,12 @@ func Success(c *gin.Context, data ...interface{}) {
 	respJSONWith200(c, 0, "ok", data...)
 }
 
-// 仅为兼容已编码业务，不推荐在新业务中使用，应该调ErrorStatus
+// 返回码200，如果是4xx、5xx等请使用ErrorStatus
 func Error(c *gin.Context, err *errcode.Error, data ...interface{}) {
 	respJSONWith200(c, err.Code(), err.Msg(), data...)
 }
 
-// 诸如参数缺失http状态码应400非200；授权失败返401非200。
-// 按HTTP协议语义返回，便于后续监控&可观测性建设。
+// 如参数缺失http状态码应返400，授权失败返401，内部错误返500等。按HTTP协议语义返回，便于后续监控&可观测性建设。
 func ErrorStatus(c *gin.Context, httpStatusCode int, err *errcode.Error, data ...interface{}) {
 	var firstData interface{}
 	if len(data) > 0 {
