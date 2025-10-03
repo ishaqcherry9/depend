@@ -30,11 +30,11 @@ func YunDunCheck(c *gin.Context, param YunDunCheckParam) (bool, *errcode.Error) 
 	captchaClient := yundun.NewCaptchaVerifyClientWithAccessKey(param.SecretId, param.SecretKey)
 	resp, err := captchaClient.Verify(request)
 	if err != nil {
-		logger.Errorf("[YunDun Req Err:%s][RequestId:%s]", err.Error(), middleware.GCtxRequestID(c))
+		logger.Errorf(c, "[YunDun Req Err:%s][RequestId:%s]", err.Error(), middleware.GCtxRequestID(c))
 		return false, errcode.YunDunRequestErr
 	}
 
-	logger.Infof("[YunDun Resp Err:%d][Msg:%s][Result:%t][RequestId:%s]", *resp.Error, *resp.Msg, *resp.Result)
+	logger.Infof(c, "[YunDun Resp Err:%d][Msg:%s][Result:%t][RequestId:%s]", *resp.Error, *resp.Msg, *resp.Result)
 
 	if *resp.Error != 0 {
 		return false, errcode.YunDunResponseErr
