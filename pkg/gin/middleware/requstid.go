@@ -90,6 +90,9 @@ func RequestID(opts ...RequestIDOption) gin.HandlerFunc {
 }
 
 func GCtxRequestID(c *gin.Context) string {
+	if c == nil {
+		return ""
+	}
 	if v, isExist := c.Get(ContextRequestIDKey); isExist {
 		if requestID, ok := v.(string); ok {
 			return requestID
@@ -130,6 +133,14 @@ func GetFromCtx(ctx context.Context, key string) interface{} {
 }
 
 func CtxRequestID(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+	// // gin框架context
+	// if c, ok := ctx.(*gin.Context); ok {
+	// 	return GCtxRequestID(c)
+	// }
+	// 原生context,兼容gin框架context
 	v := ctx.Value(ContextRequestIDKey)
 	if str, ok := v.(string); ok {
 		return str
@@ -142,6 +153,9 @@ func CtxRequestIDField(ctx context.Context) zap.Field {
 }
 
 func GetFromHeader(ctx context.Context, key string) string {
+	if ctx == nil {
+		return ""
+	}
 	header, ok := ctx.Value(RequestHeaderKey).(http.Header)
 	if !ok {
 		return ""
@@ -150,6 +164,9 @@ func GetFromHeader(ctx context.Context, key string) string {
 }
 
 func GetFromHeaders(ctx context.Context, key string) []string {
+	if ctx == nil {
+		return []string{}
+	}
 	header, ok := ctx.Value(RequestHeaderKey).(http.Header)
 	if !ok {
 		return []string{}

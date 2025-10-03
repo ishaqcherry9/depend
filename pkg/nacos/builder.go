@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ishaqcherry9/depend/pkg/logger"
 	"io"
 	"net"
 	"net/http"
@@ -12,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ishaqcherry9/depend/pkg/logger"
 )
 
 type ServiceBuilder struct {
@@ -125,14 +126,14 @@ func (sb *ServiceBuilder) Start() error {
 
 	go PopulateServiceAddresses(ctx, sb.resolver, pipe)
 
-	logger.Infof("[Service Builder] Started service discovery for: %s", sb.target.Service)
+	logger.Infof(nil, "[Service Builder] Started service discovery for: %s", sb.target.Service)
 	return nil
 }
 
 func (sb *ServiceBuilder) Stop() {
 	if sb.cancelFunc != nil {
 		sb.cancelFunc()
-		logger.Infof("[Service Builder] Stopped service discovery for: %s", sb.target.Service)
+		logger.Infof(nil, "[Service Builder] Stopped service discovery for: %s", sb.target.Service)
 	}
 }
 
@@ -143,17 +144,17 @@ func (sb *ServiceBuilder) GetResolver() *AddressResolver {
 func (sb *ServiceBuilder) startNacosPolling(ctx context.Context, pipe chan []string) {
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Errorf("[Service Builder] Nacos polling panic for %s: %v", sb.target.Service, r)
+			logger.Errorf(nil, "[Service Builder] Nacos polling panic for %s: %v", sb.target.Service, r)
 		}
 		close(pipe)
-		logger.Infof("[Service Builder] Nacos polling stopped for: %s", sb.target.Service)
+		logger.Infof(nil, "[Service Builder] Nacos polling stopped for: %s", sb.target.Service)
 	}()
 
 	const maxFailures = 3
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
-	logger.Infof("[Service Builder] Starting Nacos polling for service: %s", sb.target.Service)
+	logger.Infof(nil, "[Service Builder] Starting Nacos polling for service: %s", sb.target.Service)
 
 	sb.pollNacosWithRetry(pipe, maxFailures)
 
@@ -162,7 +163,7 @@ func (sb *ServiceBuilder) startNacosPolling(ctx context.Context, pipe chan []str
 		case <-ticker.C:
 			sb.pollNacosWithRetry(pipe, maxFailures)
 		case <-ctx.Done():
-			logger.Infof("[Service Builder] Context done for %s, stopping polling", sb.target.Service)
+			logger.Infof(nil, "[Service Builder] Context done for %s, stopping polling", sb.target.Service)
 			return
 		}
 	}
@@ -171,7 +172,7 @@ func (sb *ServiceBuilder) startNacosPolling(ctx context.Context, pipe chan []str
 func (sb *ServiceBuilder) pollNacosWithRetry(pipe chan []string, maxFailures int) {
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Errorf("[Service Builder] Nacos poll panic for %s: %v", sb.target.Service, r)
+			logger.Errorf(nil, "[Service Builder] Nacos poll panic for %s: %v", sb.target.Service, r)
 			sb.consecutiveFailures++
 		}
 	}()
@@ -181,7 +182,7 @@ func (sb *ServiceBuilder) pollNacosWithRetry(pipe chan []string, maxFailures int
 		if retryInterval > 60*time.Second {
 			retryInterval = 60 * time.Second
 		}
-		logger.Infof("[Service Builder] %s: Too many failures (%d), waiting %v before retry",
+		logger.Infof(nil, "[Service Builder] %s: Too many failures (%d), waiting %v before retry",
 			sb.target.Service, sb.consecutiveFailures, retryInterval)
 		time.Sleep(retryInterval)
 	}
@@ -189,13 +190,13 @@ func (sb *ServiceBuilder) pollNacosWithRetry(pipe chan []string, maxFailures int
 	hosts, err := sb.fetchInstancesWithRetry()
 	if err != nil {
 		sb.consecutiveFailures++
-		logger.Errorf("[Service Builder] Nacos poll failed for %s (failures: %d): %v",
+		logger.Errorf(nil, "[Service Builder] Nacos poll failed for %s (failures: %d): %v",
 			sb.target.Service, sb.consecutiveFailures, err)
 		return
 	}
 
 	if sb.consecutiveFailures > 0 {
-		logger.Infof("[Service Builder] %s: Recovered after %d failures",
+		logger.Infof(nil, "[Service Builder] %s: Recovered after %d failures",
 			sb.target.Service, sb.consecutiveFailures)
 		sb.consecutiveFailures = 0
 	}
@@ -203,11 +204,11 @@ func (sb *ServiceBuilder) pollNacosWithRetry(pipe chan []string, maxFailures int
 	currentSnapshot := sb.createInstanceSnapshot(hosts)
 	validEndpoints := sb.filterValidEndpoints(hosts)
 
-	logger.Debugf("[Service Builder] %s: found %d total instances, %d valid endpoints",
+	logger.Debugf(nil, "[Service Builder] %s: found %d total instances, %d valid endpoints",
 		sb.target.Service, len(hosts), len(validEndpoints))
 
 	if sb.isSnapshotEqual(currentSnapshot, sb.lastSnapshot) {
-		logger.Debugf("[Service Builder] %s: No changes detected", sb.target.Service)
+		logger.Debugf(nil, "[Service Builder] %s: No changes detected", sb.target.Service)
 		return
 	}
 
@@ -216,9 +217,9 @@ func (sb *ServiceBuilder) pollNacosWithRetry(pipe chan []string, maxFailures int
 
 	select {
 	case pipe <- validEndpoints:
-		logger.Infof("[Service Builder] Updated %d endpoints for %s", len(validEndpoints), sb.target.Service)
+		logger.Infof(nil, "[Service Builder] Updated %d endpoints for %s", len(validEndpoints), sb.target.Service)
 	default:
-		logger.Warnf("[Service Builder] Channel full, dropping update for %s", sb.target.Service)
+		logger.Warnf(nil, "[Service Builder] Channel full, dropping update for %s", sb.target.Service)
 	}
 }
 
@@ -235,7 +236,7 @@ func (sb *ServiceBuilder) fetchInstancesWithRetry() ([]Host, error) {
 		lastErr = err
 		if i < maxRetries-1 {
 			retryDelay := time.Duration(i+1) * 2 * time.Second
-			logger.Infof("[Service Builder] Retry %d/%d for %s after %v: %v",
+			logger.Infof(nil, "[Service Builder] Retry %d/%d for %s after %v: %v",
 				i+1, maxRetries, sb.target.Service, retryDelay, err)
 			time.Sleep(retryDelay)
 		}
@@ -283,7 +284,7 @@ func (sb *ServiceBuilder) fetchInstancesFromNacos() ([]Host, error) {
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	logger.Debugf("[Service Builder] Raw Nacos API response: %s", string(body))
+	logger.Debugf(nil, "[Service Builder] Raw Nacos API response: %s", string(body))
 
 	var response NacosInstanceListResponse
 	if err := json.Unmarshal(body, &response); err != nil {
@@ -294,7 +295,7 @@ func (sb *ServiceBuilder) fetchInstancesFromNacos() ([]Host, error) {
 		return nil, fmt.Errorf("Nacos API returned error: code=%d, message=%s", response.Code, response.Message)
 	}
 
-	logger.Debugf("[Service Builder] Parsed %d hosts from Nacos API", len(response.Data.Hosts))
+	logger.Debugf(nil, "[Service Builder] Parsed %d hosts from Nacos API", len(response.Data.Hosts))
 	return response.Data.Hosts, nil
 }
 
@@ -319,7 +320,7 @@ func (sb *ServiceBuilder) buildNacosAPIURL() string {
 	params.Set("healthyOnly", "false")
 
 	finalURL := baseURL + "?" + params.Encode()
-	logger.Debugf("[Service Builder] Nacos API URL: %s", finalURL)
+	logger.Debugf(nil, "[Service Builder] Nacos API URL: %s", finalURL)
 
 	return finalURL
 }
@@ -348,7 +349,7 @@ func (sb *ServiceBuilder) filterValidEndpoints(hosts []Host) []string {
 		}
 
 		validEndpoints = append(validEndpoints, addr)
-		logger.Debugf("[Service Builder] %s included (weight: %.1f, instanceId: %s)",
+		logger.Debugf(nil, "[Service Builder] %s included (weight: %.1f, instanceId: %s)",
 			addr, host.Weight, host.InstanceId)
 	}
 
@@ -439,6 +440,6 @@ func (sb *ServiceBuilder) logInstanceChanges(last, current []InstanceSnapshot, v
 		changeDetail = strings.Join(changes, "; ")
 	}
 
-	logger.Infof("[Service Builder] %s instances changed (%d→%d total, %d valid): %s",
+	logger.Infof(nil, "[Service Builder] %s instances changed (%d→%d total, %d valid): %s",
 		sb.target.Service, len(last), len(current), len(validEndpoints), changeDetail)
 }

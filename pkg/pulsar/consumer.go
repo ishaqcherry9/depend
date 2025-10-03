@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/ishaqcherry9/depend/pkg/logger"
 	workerpool "github.com/ishaqcherry9/depend/pkg/workpool"
 	"go.uber.org/zap"
-	"sync"
 
 	"github.com/apache/pulsar-client-go/pulsar"
 )
@@ -42,7 +43,7 @@ func (c *consumer) Receive(ctx context.Context) (*Message, error) {
 
 func (c *consumer) Consume(ctx context.Context, handleFn HandleMessageFn) error {
 	pool := workerpool.NewWorkerFIFOPool(10, func(err interface{}) {
-		logger.Error("message panic", zap.Any("panic", err))
+		logger.Error(ctx, "message panic", zap.Any("panic", err))
 	})
 	defer workerpool.FIFOAntsRelease(pool)
 
@@ -64,7 +65,7 @@ func (c *consumer) Consume(ctx context.Context, handleFn HandleMessageFn) error 
 
 			if err != nil {
 				c.internal.Nack(consumerMsg.Message)
-				logger.Error("consumer task submit failed", zap.Error(err))
+				logger.Error(ctx, "consumer task submit failed", zap.Error(err))
 			}
 		}
 	}

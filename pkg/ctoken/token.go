@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/gogf/gf/v2/errors/gcode"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
@@ -11,7 +13,6 @@ import (
 	"github.com/gogf/gf/v2/util/gconv"
 	"github.com/ishaqcherry9/depend/pkg/goredis"
 	"github.com/ishaqcherry9/depend/pkg/logger"
-	"strings"
 )
 
 type Token interface {
@@ -52,7 +53,7 @@ func NewDefaultTokenByConfig(options Options, redisCli *goredis.Client) Token {
 		Codec:   NewDefaultCodec(options.TokenDelimiter, options.EncryptKey),
 		Cache:   NewDefaultCache(options.CacheMode, options.CachePreKey, options.Timeout, redisCli),
 	}
-	logger.Debug("token options", logger.String("conf", options.String()))
+	logger.Debug(context.Background(), "token options", logger.String("conf", options.String()))
 	return cToken
 }
 
@@ -146,11 +147,11 @@ func (c *CToken) Validate(ctx context.Context, token string) (userKey string, er
 
 	userCache, err := c.Cache.Get(ctx, cacheKey)
 	if err != nil {
-		logger.Error("Validate cache.Get error", logger.Err(err), logger.String("cacheKey", cacheKey))
+		logger.Error(ctx, "Validate cache.Get error", logger.Err(err), logger.String("cacheKey", cacheKey))
 		return
 	}
 	if userCache == nil {
-		logger.Warn("Validate userCache is nil", logger.String("userKey", userKey))
+		logger.Warn(ctx, "Validate userCache is nil", logger.String("userKey", userKey))
 		err = gerror.NewCode(gcode.CodeInternalError, MsgErrDataEmpty)
 		return
 	}
@@ -159,7 +160,7 @@ func (c *CToken) Validate(ctx context.Context, token string) (userKey string, er
 		return
 	}
 
-	logger.Debug("Validate userCache",
+	logger.Debug(ctx, "Validate userCache",
 		logger.String("userKey", userKey),
 		logger.Any("cache", userCache),
 		logger.String("token", token))

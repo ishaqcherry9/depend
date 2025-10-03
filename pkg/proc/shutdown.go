@@ -3,13 +3,15 @@
 package proc
 
 import (
-	"github.com/ishaqcherry9/depend/pkg/logger"
-	"github.com/ishaqcherry9/depend/pkg/threading"
+	"context"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/ishaqcherry9/depend/pkg/logger"
+	"github.com/ishaqcherry9/depend/pkg/threading"
 )
 
 const (
@@ -68,7 +70,7 @@ func WrapUp() {
 func gracefulStop(signals chan os.Signal, sig syscall.Signal) {
 	signal.Stop(signals)
 
-	logger.Infof("Got signal %d, shutting down...", sig)
+	logger.Infof(context.Background(), "Got signal %d, shutting down...", sig)
 	go wrapUpListeners.notifyListeners()
 
 	time.Sleep(wrapUpTime)
@@ -79,7 +81,7 @@ func gracefulStop(signals chan os.Signal, sig syscall.Signal) {
 	shutdownLock.Unlock()
 
 	time.Sleep(remainingTime)
-	logger.Infof("Still alive after %v, going to force kill the process...", waitTime)
+	logger.Infof(context.Background(), "Still alive after %v, going to force kill the process...", waitTime)
 	_ = syscall.Kill(syscall.Getpid(), sig)
 }
 

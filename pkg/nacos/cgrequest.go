@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ishaqcherry9/depend/pkg/cgreq"
-	"github.com/ishaqcherry9/depend/pkg/logger"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ishaqcherry9/depend/pkg/cgreq"
+	"github.com/ishaqcherry9/depend/pkg/logger"
 
 	"github.com/valyala/fasthttp"
 )
@@ -130,28 +131,28 @@ func (sc *ServiceClient) doWithRetry(ctx context.Context, method string, feign *
 		selectedAddress := sc.selectAddressWithLoadBalance(availableAddresses)
 
 		if attempt > 0 {
-			logger.Warnf("[ServiceClient] %s retry attempt %d, selected address: %s",
+			logger.Warnf(ctx, "[ServiceClient] %s retry attempt %d, selected address: %s",
 				sc.GetServiceName(), attempt, selectedAddress)
 		} else {
-			logger.Debugf("[ServiceClient] %s first attempt, selected address: %s",
+			logger.Debugf(ctx, "[ServiceClient] %s first attempt, selected address: %s",
 				sc.GetServiceName(), selectedAddress)
 		}
 
 		result, err := sc.doFastHTTPRequest(ctx, method, selectedAddress, feign)
 		if err == nil {
 			if attempt > 0 {
-				logger.Infof("[ServiceClient] %s request succeeded after %d retries",
+				logger.Infof(ctx, "[ServiceClient] %s request succeeded after %d retries",
 					sc.GetServiceName(), attempt)
 			}
 			return result, nil
 		}
 
 		lastErr = err
-		logger.Warnf("[ServiceClient] %s request failed to %s (attempt %d): %v",
+		logger.Warnf(ctx, "[ServiceClient] %s request failed to %s (attempt %d): %v",
 			sc.GetServiceName(), selectedAddress, attempt+1, err)
 
 		if !isRetryableError(err) {
-			logger.Debugf("[ServiceClient] %s error is not retryable: %v",
+			logger.Debugf(ctx, "[ServiceClient] %s error is not retryable: %v",
 				sc.GetServiceName(), err)
 			return nil, err
 		}

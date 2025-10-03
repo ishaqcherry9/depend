@@ -1,12 +1,14 @@
 package pulsar
 
 import (
+	"context"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/ishaqcherry9/depend/pkg/logger"
 	"go.uber.org/zap"
-	"sync"
-	"time"
 )
 
 var (
@@ -40,7 +42,7 @@ func InitClient(config *ClientConfig) {
 
 		internal, err := pulsar.NewClient(options)
 		if err != nil {
-			logger.Fatal("pulsar client init failed", zap.Error(err))
+			logger.Fatal(context.Background(), "pulsar client init failed", zap.Error(err))
 		}
 		gClient = &client{internal: internal}
 	})
@@ -48,7 +50,7 @@ func InitClient(config *ClientConfig) {
 
 func GetClient() Client {
 	if gClient == nil {
-		logger.Fatal("pulsar client get failed")
+		logger.Fatal(context.Background(), "pulsar client get failed")
 	}
 	return gClient
 }
