@@ -12,6 +12,40 @@ import (
 	"go.uber.org/zap"
 )
 
+/*
+# 图形验证码简单使用方法
+
+```
+import "github.com/ishaqcherry9/depend/pkg/captcha/captchabase64"
+
+// 初始化图形验证码客户端
+	_, err = captchabase64.NewCaptchaService(context.Background(), database.GetRedisCli())
+	if err != nil {
+		logger.Error(context.Background(), "init captchabase64Service failed", zap.Error(err))
+		return
+	}
+
+// 获取图形验证码方法
+    captchabase64Service, err := captchabase64.GetBase64CaptchaService()
+    if err != nil {
+        logger.Error(c, "GetBase64CaptchaService", logger.Err(err))
+        return
+    }
+    id, b64Image, err := captchabase64Service.GenerateMath(c)
+    if err != nil {
+        logger.Error(c, "GenerateMath", logger.Err(err))
+        return
+    }
+
+// 验证图形验证码
+    answer :="223"
+    if !captchabase64Service.Verify(c, id, answer, true) {
+        logger.Error(c, "Verify", logger.Err(errors.New("验证图形验证码失败")))
+        return
+    }
+```
+*/
+
 func newTestService(t *testing.T) (*base64CaptchaService, *goredis.Client, func()) {
 	t.Helper()
 	mr, err := miniredis.Run()
@@ -68,7 +102,7 @@ func TestGenerateDigitAndVerify(t *testing.T) {
 	svc, cli, done := newTestService(t)
 	defer done()
 
-	id, b64, answer, err := svc.GenerateDigit(context.Background())
+	id, b64, err := svc.GenerateDigit(context.Background())
 	if err != nil {
 		t.Fatalf("GenerateDigit error: %v", err)
 	}
@@ -78,7 +112,7 @@ func TestGenerateDigitAndVerify(t *testing.T) {
 	mustBase64(t, b64)
 
 	// fetch expected answer from redis and verify
-	answer, err = cli.Get(context.Background(), "captcha:"+id).Result()
+	answer, err := cli.Get(context.Background(), "captcha:"+id).Result()
 	if err != nil {
 		t.Fatalf("get answer: %v", err)
 	}
@@ -107,7 +141,7 @@ func TestGenerateDigitWith(t *testing.T) {
 	svc, cli, done := newTestService(t)
 	defer done()
 
-	id, b64, answer, err := svc.GenerateDigitWith(context.Background(), 200, 60, 5, 0.5, 2)
+	id, b64, err := svc.GenerateDigitWith(context.Background(), 200, 60, 5, 0.5, 2)
 	if err != nil {
 		t.Fatalf("GenerateDigitWith error: %v", err)
 	}
@@ -116,7 +150,7 @@ func TestGenerateDigitWith(t *testing.T) {
 	}
 	mustBase64(t, b64)
 
-	answer, err = cli.Get(context.Background(), "captcha:"+id).Result()
+	answer, err := cli.Get(context.Background(), "captcha:"+id).Result()
 	if err != nil {
 		t.Fatalf("get answer: %v", err)
 	}
@@ -139,17 +173,21 @@ func TestGenerateDigitWith(t *testing.T) {
 }
 
 func TestGenerateMathAndVerify(t *testing.T) {
-	svc, _, done := newTestService(t)
+	svc, cli, done := newTestService(t)
 	defer done()
 
-	id, b64, answer, err := svc.GenerateMath(context.Background())
+	id, b64, err := svc.GenerateMath(context.Background())
 	if err != nil {
 		t.Fatalf("GenerateMath error: %v", err)
 	}
-	if id == "" || answer == "" {
+	if id == "" {
 		t.Fatalf("empty id/answer")
 	}
 	mustBase64(t, b64)
+	answer, err := cli.Get(context.Background(), "captcha:"+id).Result()
+	if err != nil {
+		t.Fatalf("get answer: %v", err)
+	}
 	if !svc.Verify(context.Background(), id, answer, true) {
 		t.Fatalf("verify failed with correct answer")
 	}
@@ -168,17 +206,21 @@ func TestGenerateMathAndVerify(t *testing.T) {
 }
 
 func TestGenerateMathWith(t *testing.T) {
-	svc, _, done := newTestService(t)
+	svc, cli, done := newTestService(t)
 	defer done()
 
-	id, b64, answer, err := svc.GenerateMathWith(context.Background(), 180, 60, 3)
+	id, b64, err := svc.GenerateMathWith(context.Background(), 180, 60, 3)
 	if err != nil {
 		t.Fatalf("GenerateMathWith error: %v", err)
 	}
-	if id == "" || answer == "" {
+	if id == "" {
 		t.Fatalf("empty id/answer")
 	}
 	mustBase64(t, b64)
+	answer, err := cli.Get(context.Background(), "captcha:"+id).Result()
+	if err != nil {
+		t.Fatalf("get answer: %v", err)
+	}
 	if !svc.Verify(context.Background(), id, answer, true) {
 		t.Fatalf("verify failed with correct answer")
 	}
@@ -200,7 +242,7 @@ func TestGenerateStringAndVerify(t *testing.T) {
 	svc, cli, done := newTestService(t)
 	defer done()
 
-	id, b64, answer, err := svc.GenerateString(context.Background())
+	id, b64, err := svc.GenerateString(context.Background())
 	if err != nil {
 		t.Fatalf("GenerateString error: %v", err)
 	}
@@ -209,7 +251,7 @@ func TestGenerateStringAndVerify(t *testing.T) {
 	}
 	mustBase64(t, b64)
 
-	answer, err = cli.Get(context.Background(), "captcha:"+id).Result()
+	answer, err := cli.Get(context.Background(), "captcha:"+id).Result()
 	if err != nil {
 		t.Fatalf("get answer: %v", err)
 	}
@@ -234,7 +276,7 @@ func TestGenerateStringWith(t *testing.T) {
 	svc, cli, done := newTestService(t)
 	defer done()
 
-	id, b64, answer, err := svc.GenerateStringWith(context.Background(), 160, 50, 5, 2, 4, "abcd1234", nil)
+	id, b64, err := svc.GenerateStringWith(context.Background(), 160, 50, 5, 2, 4, "abcd1234", nil)
 	if err != nil {
 		t.Fatalf("GenerateStringWith error: %v", err)
 	}
@@ -243,7 +285,7 @@ func TestGenerateStringWith(t *testing.T) {
 	}
 	mustBase64(t, b64)
 
-	answer, err = cli.Get(context.Background(), "captcha:"+id).Result()
+	answer, err := cli.Get(context.Background(), "captcha:"+id).Result()
 	if err != nil {
 		t.Fatalf("get answer: %v", err)
 	}

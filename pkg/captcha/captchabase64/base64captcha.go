@@ -104,25 +104,25 @@ func GetBase64CaptchaService() (*base64CaptchaService, error) {
 
 // GenerateDigit 生成数字验证码，返回验证码 ID 与 base64 图片字符串。
 // width/height 为图片尺寸，length 为验证码位数，maxSkew 扭曲程度(0.0~1.0)，dotCount 干扰点数量。
-func (s *base64CaptchaService) GenerateDigit(ctx context.Context) (id string, b64Image string, answer string, err error) {
+func (s *base64CaptchaService) GenerateDigit(ctx context.Context) (id string, b64Image string, err error) {
 	if s == nil || s.store == nil {
-		return "", "", "", errors.New("captcha service/store not initialized")
+		return "", "", errors.New("captcha service/store not initialized")
 	}
 	driver := base64Captcha.NewDriverDigit(s.height, s.width, s.length, s.maxSkew, s.dotCount)
 	c := base64Captcha.NewCaptcha(driver, s.store)
-	id, b64Image, answer, err = c.Generate()
+	id, b64Image, answer, err := c.Generate()
 	if err != nil {
 		logger.Error(ctx, "captcha generate digit error", logger.String("error", err.Error()))
-		return "", "", "", err
+		return "", "", err
 	}
 	logger.Debug(ctx, "captcha generate digit", zap.String("id", id), zap.String("answer", answer))
 	return
 }
 
 // GenerateDigitWith 生成数字验证码（可自定义参数，传0则回落到配置默认值）。
-func (s *base64CaptchaService) GenerateDigitWith(ctx context.Context, width, height, length int, maxSkew float64, dotCount int) (id string, b64Image string, answer string, err error) {
+func (s *base64CaptchaService) GenerateDigitWith(ctx context.Context, width, height, length int, maxSkew float64, dotCount int) (id string, b64Image string, err error) {
 	if s == nil || s.store == nil {
-		return "", "", "", errors.New("captcha service/store not initialized")
+		return "", "", errors.New("captcha service/store not initialized")
 	}
 	if width <= 0 {
 		width = s.width
@@ -141,34 +141,36 @@ func (s *base64CaptchaService) GenerateDigitWith(ctx context.Context, width, hei
 	}
 	driver := base64Captcha.NewDriverDigit(height, width, length, maxSkew, dotCount)
 	c := base64Captcha.NewCaptcha(driver, s.store)
-	id, b64Image, answer, err = c.Generate()
+	id, b64Image, answer, err := c.Generate()
 	if err != nil {
 		logger.Error(ctx, "captcha generate digit(with) error", logger.String("error", err.Error()))
-		return "", "", "", err
+		return "", "", err
 	}
+	logger.Debug(ctx, "captcha generate digit(with)", zap.String("id", id), zap.String("answer", answer))
 	return
 }
 
 // GenerateMath 生成算术验证码，返回验证码 ID、base64 图片与答案。
 // noiseCount 为噪点数量，bg/fonts 采用默认值。
-func (s *base64CaptchaService) GenerateMath(ctx context.Context) (id string, b64Image string, answer string, err error) {
+func (s *base64CaptchaService) GenerateMath(ctx context.Context) (id string, b64Image string, err error) {
 	if s == nil || s.store == nil {
-		return "", "", "", errors.New("captcha service/store not initialized")
+		return "", "", errors.New("captcha service/store not initialized")
 	}
 	driver := base64Captcha.NewDriverMath(s.height, s.width, s.noiseCount, 0, nil, nil, nil)
 	c := base64Captcha.NewCaptcha(driver, s.store)
-	id, b64Image, answer, err = c.Generate()
+	id, b64Image, answer, err := c.Generate()
 	if err != nil {
 		logger.Error(ctx, "captcha generate math error", logger.String("error", err.Error()))
-		return "", "", "", err
+		return "", "", err
 	}
+	logger.Debug(ctx, "captcha GenerateMath", zap.String("id", id), zap.String("answer", answer))
 	return
 }
 
 // GenerateString 生成字符串验证码，使用服务配置参数。
-func (s *base64CaptchaService) GenerateString(ctx context.Context) (id string, b64Image string, answer string, err error) {
+func (s *base64CaptchaService) GenerateString(ctx context.Context) (id string, b64Image string, err error) {
 	if s == nil || s.store == nil {
-		return "", "", "", errors.New("captcha service/store not initialized")
+		return "", "", errors.New("captcha service/store not initialized")
 	}
 	driver := base64Captcha.NewDriverString(
 		s.height,
@@ -182,18 +184,19 @@ func (s *base64CaptchaService) GenerateString(ctx context.Context) (id string, b
 		nil,
 	)
 	c := base64Captcha.NewCaptcha(driver, s.store)
-	id, b64Image, answer, err = c.Generate()
+	id, b64Image, answer, err := c.Generate()
 	if err != nil {
 		logger.Error(ctx, "captcha generate string error", logger.String("error", err.Error()))
-		return "", "", "", err
+		return "", "", err
 	}
+	logger.Debug(ctx, "captcha GenerateString", zap.String("id", id), zap.String("answer", answer))
 	return
 }
 
 // GenerateStringWith 生成字符串验证码（可自定义参数，传0或空值则回落到配置默认值）。
-func (s *base64CaptchaService) GenerateStringWith(ctx context.Context, width, height, length, noiseCount, lineOptions int, charset string, bg *color.RGBA) (id string, b64Image string, answer string, err error) {
+func (s *base64CaptchaService) GenerateStringWith(ctx context.Context, width, height, length, noiseCount, lineOptions int, charset string, bg *color.RGBA) (id string, b64Image string, err error) {
 	if s == nil || s.store == nil {
-		return "", "", "", errors.New("captcha service/store not initialized")
+		return "", "", errors.New("captcha service/store not initialized")
 	}
 	if width <= 0 {
 		width = s.width
@@ -218,18 +221,19 @@ func (s *base64CaptchaService) GenerateStringWith(ctx context.Context, width, he
 	}
 	driver := base64Captcha.NewDriverString(height, width, length, noiseCount, lineOptions, charset, bg, nil, nil)
 	c := base64Captcha.NewCaptcha(driver, s.store)
-	id, b64Image, answer, err = c.Generate()
+	id, b64Image, answer, err := c.Generate()
 	if err != nil {
 		logger.Error(ctx, "captcha generate string(with) error", logger.String("error", err.Error()))
-		return "", "", "", err
+		return "", "", err
 	}
+	logger.Debug(ctx, "captcha GenerateString(with)", zap.String("id", id), zap.String("answer", answer))
 	return
 }
 
 // GenerateMathWith 生成算术验证码（可自定义参数，传0则回落到配置默认值）。
-func (s *base64CaptchaService) GenerateMathWith(ctx context.Context, width, height, noiseCount int) (id string, b64Image string, answer string, err error) {
+func (s *base64CaptchaService) GenerateMathWith(ctx context.Context, width, height, noiseCount int) (id string, b64Image string, err error) {
 	if s == nil || s.store == nil {
-		return "", "", "", errors.New("captcha service/store not initialized")
+		return "", "", errors.New("captcha service/store not initialized")
 	}
 	if width <= 0 {
 		width = s.width
@@ -242,11 +246,12 @@ func (s *base64CaptchaService) GenerateMathWith(ctx context.Context, width, heig
 	}
 	driver := base64Captcha.NewDriverMath(height, width, noiseCount, 0, nil, nil, nil)
 	c := base64Captcha.NewCaptcha(driver, s.store)
-	id, b64Image, answer, err = c.Generate()
+	id, b64Image, answer, err := c.Generate()
 	if err != nil {
 		logger.Error(ctx, "captcha generate math(with) error", logger.String("error", err.Error()))
-		return "", "", "", err
+		return "", "", err
 	}
+	logger.Debug(ctx, "captcha GenerateMath(with)", zap.String("id", id), zap.String("answer", answer))
 	return
 }
 
