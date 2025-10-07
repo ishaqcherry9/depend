@@ -32,12 +32,12 @@ func TestYunDunCheck(t *testing.T) {
 
 	c.Set(middleware.ContextRequestIDKey, requestID)
 	ctx := middleware.WrapCtx(c)
-	
-	resultBool, err := YunDunCheck(ctx, param)
+
+	response, err := YunDunCheck(ctx, param)
 	if err != nil {
 		fmt.Println("err: ", err)
 		return
 	}
 
-	fmt.Println(resultBool)
+	fmt.Println(response)
 }

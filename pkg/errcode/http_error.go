@@ -33,6 +33,12 @@ msg2 = %s
 	return e
 }
 
+func (e *Error) WithMsg(msg string) *Error {
+	newErr := *e
+	newErr.msg = msg
+	return &newErr
+}
+
 func (e *Error) Err(msg ...string) error {
 	message := e.msg
 	if len(msg) > 0 {

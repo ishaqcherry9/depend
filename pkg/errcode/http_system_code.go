@@ -25,8 +25,4 @@ var (
 	DataLoss            = NewError(100022, "Data Loss")
 	StatusBadGateway    = NewError(100023, "Bad Gateway")
 	TooEarly            = NewError(100425, "Too Early")
-
-	YunDunParamError  = NewError(101000, "YunDun Param Error")
-	YunDunRequestErr  = NewError(101001, "YunDun Request Err")
-	YunDunResponseErr = NewError(101002, "YunDun Response Err")
 )
