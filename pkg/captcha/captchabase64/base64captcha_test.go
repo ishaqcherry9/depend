@@ -61,7 +61,7 @@ func newTestService(t *testing.T) (*base64CaptchaService, *goredis.Client, func(
 	}
 
 	cfg := &Base64CaptchaServiceConfig{
-		client: cli,
+		Client: cli,
 		// keyPrefix:   "captcha:",
 		// expiration:  2 * time.Minute,
 		// width:       120,

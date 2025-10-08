@@ -18,18 +18,18 @@ var captchaService *base64CaptchaService
 
 // 初始化时确认入参,减少后期传参
 type Base64CaptchaServiceConfig struct {
-	client      *goredis.Client // redis 客户端(必传)
-	keyPrefix   string          // redis 键前缀(可选,默认captcha:)
-	expiration  time.Duration   // redis 键过期时间(可选,默认10分钟)
-	width       int             // 图片宽度(可选,默认240)
-	height      int             // 图片高度(可选,默认80)
-	noiseCount  int             // 噪点数量(可选,默认50)
-	dotCount    int             // 干扰点数量(可选,默认50)
-	length      int             // 数字验证码位数(可选,默认6)
-	maxSkew     float64         // 数字验证码扭曲程度(可选,默认0.6)
-	charset     string          // 字符串验证码字符集(可选,默认去除易混字符)
-	lineOptions int             // 字符串验证码线条选项(可选,默认4)
-	bgColor     *color.RGBA     // 背景色(可选)
+	Client      *goredis.Client // redis 客户端(必传)
+	KeyPrefix   string          // redis 键前缀(可选,默认captcha:)
+	Expiration  time.Duration   // redis 键过期时间(可选,默认10分钟)
+	Width       int             // 图片宽度(可选,默认240)
+	Height      int             // 图片高度(可选,默认80)
+	NoiseCount  int             // 噪点数量(可选,默认50)
+	DotCount    int             // 干扰点数量(可选,默认50)
+	Length      int             // 数字验证码位数(可选,默认6)
+	MaxSkew     float64         // 数字验证码扭曲程度(可选,默认0.6)
+	Charset     string          // 字符串验证码字符集(可选,默认去除易混字符)
+	LineOptions int             // 字符串验证码线条选项(可选,默认4)
+	BgColor     *color.RGBA     // 背景色(可选)
 }
 
 // Service 组织验证码能力，持有存储实现。
@@ -45,49 +45,49 @@ func NewCaptchaService(ctx context.Context, client *goredis.Client) (*base64Capt
 		return nil, errors.New("captcha redis client is nil")
 	}
 	return NewCaptchaServiceWithConfig(ctx, &Base64CaptchaServiceConfig{
-		client: client,
+		Client: client,
 	})
 }
 
 // NewCaptchaServiceWithConfig 使用传入参数构建客户端
 func NewCaptchaServiceWithConfig(ctx context.Context, config *Base64CaptchaServiceConfig) (*base64CaptchaService, error) {
-	if config == nil || config.client == nil {
+	if config == nil || config.Client == nil {
 		logger.Error(ctx, "captcha redis client is nil")
 		return nil, errors.New("captcha redis client is nil")
 	}
 	// 设置默认值
-	if config.keyPrefix == "" {
-		config.keyPrefix = "captcha:"
+	if config.KeyPrefix == "" {
+		config.KeyPrefix = "captcha:"
 	}
-	if config.expiration == 0 {
-		config.expiration = 10 * time.Minute
+	if config.Expiration == 0 {
+		config.Expiration = 10 * time.Minute
 	}
-	if config.width == 0 {
-		config.width = 240
+	if config.Width == 0 {
+		config.Width = 240
 	}
-	if config.height == 0 {
-		config.height = 80
+	if config.Height == 0 {
+		config.Height = 80
 	}
-	if config.noiseCount == 0 {
-		config.noiseCount = 50
+	if config.NoiseCount == 0 {
+		config.NoiseCount = 50
 	}
-	if config.dotCount == 0 {
-		config.dotCount = 50
+	if config.DotCount == 0 {
+		config.DotCount = 50
 	}
-	if config.length == 0 {
-		config.length = 6
+	if config.Length == 0 {
+		config.Length = 6
 	}
-	if config.maxSkew == 0 {
-		config.maxSkew = 0.6
+	if config.MaxSkew == 0 {
+		config.MaxSkew = 0.6
 	}
-	if config.charset == "" {
-		config.charset = "123456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
+	if config.Charset == "" {
+		config.Charset = "123456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
 	}
-	if config.lineOptions == 0 {
-		config.lineOptions = 4
+	if config.LineOptions == 0 {
+		config.LineOptions = 4
 	}
 	captchaService = &base64CaptchaService{
-		store:                      newRedisStore(config.client, config.keyPrefix, config.expiration),
+		store:                      newRedisStore(config.Client, config.KeyPrefix, config.Expiration),
 		Base64CaptchaServiceConfig: config,
 	}
 	return captchaService, nil
@@ -108,7 +108,7 @@ func (s *base64CaptchaService) GenerateDigit(ctx context.Context) (id string, b6
 	if s == nil || s.store == nil {
 		return "", "", errors.New("captcha service/store not initialized")
 	}
-	driver := base64Captcha.NewDriverDigit(s.height, s.width, s.length, s.maxSkew, s.dotCount)
+	driver := base64Captcha.NewDriverDigit(s.Height, s.Width, s.Length, s.MaxSkew, s.DotCount)
 	c := base64Captcha.NewCaptcha(driver, s.store)
 	id, b64Image, answer, err := c.Generate()
 	if err != nil {
@@ -125,19 +125,19 @@ func (s *base64CaptchaService) GenerateDigitWith(ctx context.Context, width, hei
 		return "", "", errors.New("captcha service/store not initialized")
 	}
 	if width <= 0 {
-		width = s.width
+		width = s.Width
 	}
 	if height <= 0 {
-		height = s.height
+		height = s.Height
 	}
 	if length <= 0 {
-		length = s.length
+		length = s.Length
 	}
 	if maxSkew <= 0 {
-		maxSkew = s.maxSkew
+		maxSkew = s.MaxSkew
 	}
 	if dotCount <= 0 {
-		dotCount = s.dotCount
+		dotCount = s.DotCount
 	}
 	driver := base64Captcha.NewDriverDigit(height, width, length, maxSkew, dotCount)
 	c := base64Captcha.NewCaptcha(driver, s.store)
@@ -156,7 +156,7 @@ func (s *base64CaptchaService) GenerateMath(ctx context.Context) (id string, b64
 	if s == nil || s.store == nil {
 		return "", "", errors.New("captcha service/store not initialized")
 	}
-	driver := base64Captcha.NewDriverMath(s.height, s.width, s.noiseCount, 0, nil, nil, nil)
+	driver := base64Captcha.NewDriverMath(s.Height, s.Width, s.NoiseCount, 0, nil, nil, nil)
 	c := base64Captcha.NewCaptcha(driver, s.store)
 	id, b64Image, answer, err := c.Generate()
 	if err != nil {
@@ -173,13 +173,13 @@ func (s *base64CaptchaService) GenerateString(ctx context.Context) (id string, b
 		return "", "", errors.New("captcha service/store not initialized")
 	}
 	driver := base64Captcha.NewDriverString(
-		s.height,
-		s.width,
-		s.length,
-		s.noiseCount,
-		s.lineOptions,
-		s.charset,
-		s.bgColor,
+		s.Height,
+		s.Width,
+		s.Length,
+		s.NoiseCount,
+		s.LineOptions,
+		s.Charset,
+		s.BgColor,
 		nil,
 		nil,
 	)
@@ -199,25 +199,25 @@ func (s *base64CaptchaService) GenerateStringWith(ctx context.Context, width, he
 		return "", "", errors.New("captcha service/store not initialized")
 	}
 	if width <= 0 {
-		width = s.width
+		width = s.Width
 	}
 	if height <= 0 {
-		height = s.height
+		height = s.Height
 	}
 	if length <= 0 {
-		length = s.length
+		length = s.Length
 	}
 	if noiseCount <= 0 {
-		noiseCount = s.noiseCount
+		noiseCount = s.NoiseCount
 	}
 	if lineOptions <= 0 {
-		lineOptions = s.lineOptions
+		lineOptions = s.LineOptions
 	}
 	if charset == "" {
-		charset = s.charset
+		charset = s.Charset
 	}
 	if bg == nil {
-		bg = s.bgColor
+		bg = s.BgColor
 	}
 	driver := base64Captcha.NewDriverString(height, width, length, noiseCount, lineOptions, charset, bg, nil, nil)
 	c := base64Captcha.NewCaptcha(driver, s.store)
@@ -236,13 +236,13 @@ func (s *base64CaptchaService) GenerateMathWith(ctx context.Context, width, heig
 		return "", "", errors.New("captcha service/store not initialized")
 	}
 	if width <= 0 {
-		width = s.width
+		width = s.Width
 	}
 	if height <= 0 {
-		height = s.height
+		height = s.Height
 	}
 	if noiseCount <= 0 {
-		noiseCount = s.noiseCount
+		noiseCount = s.NoiseCount
 	}
 	driver := base64Captcha.NewDriverMath(height, width, noiseCount, 0, nil, nil, nil)
 	c := base64Captcha.NewCaptcha(driver, s.store)
