@@ -6,10 +6,10 @@ import (
 
 	"github.com/ishaqcherry9/depend/pkg/conf"
 	"github.com/ishaqcherry9/depend/pkg/logger"
-	"github.com/ishaqcherry9/nacos_sdk_go/clients"
-	"github.com/ishaqcherry9/nacos_sdk_go/clients/config_client"
-	"github.com/ishaqcherry9/nacos_sdk_go/common/constant"
-	"github.com/ishaqcherry9/nacos_sdk_go/vo"
+	"github.com/nacos-group/nacos-sdk-go/clients"
+	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/vo"
 	"go.uber.org/zap"
 )
 
@@ -83,10 +83,10 @@ func (conf *NacosConf) InitConfigClient() (err error) {
 			//constant.WithCacheDir(conf.CacheDir),
 			constant.WithLogLevel(conf.LogLevel),
 			constant.WithUpdateCacheWhenEmpty(true),
-			constant.WithTLS(constant.TLSConfig{
-				Enable:    false,
-				Appointed: true,
-			}),
+			// constant.WithTLS(constant.TLSConfig{
+			// 	Enable:    false,
+			// 	Appointed: true,
+			// }),
 		)
 
 		configClient, err = clients.NewConfigClient(

@@ -12,8 +12,8 @@ import (
 	"github.com/ishaqcherry9/depend/pkg/logger"
 	"github.com/ishaqcherry9/depend/pkg/netx"
 	"github.com/ishaqcherry9/depend/pkg/proc"
-	"github.com/ishaqcherry9/nacos_sdk_go/clients"
-	"github.com/ishaqcherry9/nacos_sdk_go/vo"
+	"github.com/nacos-group/nacos-sdk-go/clients"
+	"github.com/nacos-group/nacos-sdk-go/vo"
 	"go.uber.org/zap"
 )
 
