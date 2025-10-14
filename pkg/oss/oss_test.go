@@ -23,13 +23,11 @@ func TestOss(t *testing.T) {
 	fmt.Println(objects)
 
 	upload := UploadOssInfo{
-		//Key:      "20251013/abcdef.mp4",
-		Key:      "20251014/abcdef.jpg",
-		FileName: "/Users/robert/Downloads/t2.jpg",
-		//FileName: "/Users/robert/Downloads/ql_1758374133263_mp4.mp4",
+		Key:         "20251013/abcdef.mp4",
+		FileName:    "/Users/robert/Downloads/ql_1758374133263_mp4.mp4",
 		Acl:         storage.Aws.AwsAcl,
-		ContentType: "image/jpeg",
-		//ContentType: "video/mp4",
+		ContentType: "video/mp4",
+		//ContentType: "image/jpeg",
 	}
 
 	downloadURL, err := storage.Upload(ctx, upload)
@@ -40,16 +38,14 @@ func TestOss(t *testing.T) {
 
 	fmt.Println("result: ", downloadURL)
 
-	/*
+	body, err := storage.Get(ctx, "20251013/abcdef.mp4")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		body, err := storage.Get(ctx, "20251013/abcdef.mp4")
-		if err != nil {
-			log.Fatal(err)
-		}
+	fmt.Println("get len:", len(body))
 
-		fmt.Println("get len:", len(body))
-
-		if err := storage.Delete(ctx, "20251013/abcdef.mp4"); err != nil {
-			log.Fatal(err)
-		}*/
+	if err := storage.Delete(ctx, "20251013/abcdef.mp4"); err != nil {
+		log.Fatal(err)
+	}
 }

@@ -75,10 +75,7 @@ func NewStorage(ctx context.Context, configAddr string) (*Storage, error) {
 		logger.Errorf(ctx, "Error getting config: %v", err)
 		return nil, err
 	}
-
-	/*fmt.Println("aws %+v", awsConf)
-	fmt.Println("miniIo %+v", minioConf)*/
-
+	
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion(awsConf.AwsRegion),
 		config.WithCredentialsProvider(
