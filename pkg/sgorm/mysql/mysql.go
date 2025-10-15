@@ -3,6 +3,7 @@ package mysql
 import (
 	"database/sql"
 	"fmt"
+	"github.com/ishaqcherry9/depend/pkg/utils"
 	"log"
 	"os"
 
@@ -33,7 +34,7 @@ func Init(dsn string, opts ...Option) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	db.Set("gorm:table_options", "CHARSET=utf8mb4")
+	db.Set("gorm:table_options", "CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci")
 
 	if o.enableTrace {
 		err = db.Use(otelgorm.NewPlugin())
@@ -97,14 +98,14 @@ func rwSeparationPlugin(o *options) gorm.Plugin {
 	slaves := []gorm.Dialector{}
 	for _, dsn := range o.slavesDsn {
 		slaves = append(slaves, mysqlDriver.New(mysqlDriver.Config{
-			DSN: dsn,
+			DSN: utils.AdaptiveMysqlDsn(dsn),
 		}))
 	}
 
 	masters := []gorm.Dialector{}
 	for _, dsn := range o.mastersDsn {
 		masters = append(masters, mysqlDriver.New(mysqlDriver.Config{
-			DSN: dsn,
+			DSN: utils.AdaptiveMysqlDsn(dsn),
 		}))
 	}
 
