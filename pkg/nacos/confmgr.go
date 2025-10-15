@@ -2,14 +2,15 @@ package nacos
 
 import (
 	"context"
+	"reflect"
 	"sync"
 
 	"github.com/ishaqcherry9/depend/pkg/conf"
 	"github.com/ishaqcherry9/depend/pkg/logger"
-	"github.com/nacos-group/nacos-sdk-go/v2/clients"
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"github.com/nacos-group/nacos-sdk-go/clients"
+	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/vo"
 	"go.uber.org/zap"
 )
 
@@ -67,12 +68,17 @@ func MustLoad(nacosConfigFilePath string, v interface{}, f interface{}) *NacosCo
 	return &nacosConfig
 }
 
-// LoadWithWatch 加载配置并启动监听，所有nacos操作都在此函数中完成
+// LoadWithWatch 加载配置并启动监听，所有nacos操作都在此函数中完成,
+// 参数. nacosConfigFilePath配置文件路径,target目标对象指针,callback回调函数
 func LoadWithWatch(nacosConfigFilePath string, target interface{}, callback func(namespace string, group string, dataId string, data string)) *NacosConf {
 	var (
 		err    error
 		config string
 	)
+	// 判断是否指针,非指针报错
+	if reflect.TypeOf(target).Kind() != reflect.Ptr {
+		logger.Fatal(context.Background(), "target must be a pointer", zap.String("target", reflect.TypeOf(target).String()))
+	}
 
 	var nacosConfig NacosConf
 
