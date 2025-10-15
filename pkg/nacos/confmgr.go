@@ -55,9 +55,7 @@ func MustLoad(nacosConfigFilePath string, v interface{}, f interface{}) *NacosCo
 	if err != nil {
 		logger.Fatal(context.Background(), "nacos get config failed", zap.Error(err))
 	}
-	// Try to parse with auto-detection first, fallback to yaml
 	err = conf.ParseConfigData([]byte(config), "yaml", v)
-	// err = conf.ParseConfigDataWithAutoDetection([]byte(config), v)
 	if err != nil {
 		logger.Fatal(context.Background(), "load config failed", zap.Error(err))
 	}
@@ -103,7 +101,7 @@ func LoadWithWatch(nacosConfigFilePath string, target interface{}, callback func
 		logger.Fatal(context.Background(), "nacos get config failed", zap.Error(err))
 	}
 
-	// 5. 解析配置到目标对象 - 使用自动格式检测
+	// 5. 解析配置到目标对象
 	err = conf.ParseConfigData([]byte(config), "yaml", target)
 	// err = conf.ParseConfigDataWithAutoDetection([]byte(config), target)
 	if err != nil {
