@@ -33,7 +33,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/mojocn/base64Captcha v1.3.6
-	github.com/nacos-group/nacos-sdk-go v1.1.6
+	// github.com/nacos-group/nacos-sdk-go v1.1.6
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/panjf2000/ants/v2 v2.11.3
 	github.com/pkg/errors v0.9.1
@@ -65,6 +65,8 @@ require (
 	gorm.io/plugin/dbresolver v1.6.2
 )
 
+require github.com/nacos-group/nacos-sdk-go/v2 v2.3.3
+
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
@@ -93,6 +95,7 @@ require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1800 // indirect
 	github.com/aliyun/alibabacloud-dkms-gcs-go-sdk v0.5.1 // indirect
 	github.com/aliyun/alibabacloud-dkms-transfer-go-sdk v0.1.8 // indirect
+	github.com/aliyun/aliyun-secretsmanager-client-go v1.1.5 // indirect
 	github.com/aliyun/credentials-go v1.4.3 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/ardielle/ardielle-go v1.5.2 // indirect
@@ -120,6 +123,7 @@ require (
 	github.com/cloudwego/base64x v0.1.5 // indirect
 	github.com/coocood/freecache v1.2.4 // indirect
 	github.com/danieljoos/wincred v1.1.2 // indirect
+	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.1.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
@@ -129,7 +133,6 @@ require (
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
-	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
@@ -175,6 +178,7 @@ require (
 	github.com/mtibben/percent v0.2.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
+	github.com/orcaman/concurrent-map v0.0.0-20210501183033-44dafcb38ecc // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
