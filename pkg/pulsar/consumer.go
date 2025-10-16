@@ -24,12 +24,12 @@ func (c *consumer) Receive(ctx context.Context) (*Message, error) {
 	defer c.mu.RUnlock()
 
 	if c.closed {
-		return nil, fmt.Errorf("消费者已关闭")
+		return nil, fmt.Errorf("consumer is closed")
 	}
 
 	msg, err := c.internal.Receive(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("接收消息失败: %w", err)
+		return nil, fmt.Errorf("failed to receive message: %w", err)
 	}
 
 	return &Message{
@@ -76,11 +76,11 @@ func (c *consumer) Ack(msg *Message) error {
 	defer c.mu.RUnlock()
 
 	if c.closed {
-		return fmt.Errorf("消费者已关闭")
+		return fmt.Errorf("consumer is closed")
 	}
 
 	if msg == nil || msg.internal == nil {
-		return fmt.Errorf("无效消息")
+		return fmt.Errorf("invalid message")
 	}
 
 	return c.internal.Ack(msg.internal)
@@ -91,11 +91,11 @@ func (c *consumer) Nack(msg *Message) error {
 	defer c.mu.RUnlock()
 
 	if c.closed {
-		return fmt.Errorf("消费者已关闭")
+		return fmt.Errorf("consumer is closed")
 	}
 
 	if msg == nil || msg.internal == nil {
-		return fmt.Errorf("无效消息")
+		return fmt.Errorf("invalid message")
 	}
 
 	c.internal.Nack(msg.internal)
@@ -107,11 +107,11 @@ func (c *consumer) AckCumulative(msg *Message) error {
 	defer c.mu.RUnlock()
 
 	if c.closed {
-		return fmt.Errorf("消费者已关闭")
+		return fmt.Errorf("consumer is closed")
 	}
 
 	if msg == nil || msg.internal == nil {
-		return fmt.Errorf("无效消息")
+		return fmt.Errorf("invalid message")
 	}
 
 	return c.internal.AckCumulative(msg.internal)
@@ -122,15 +122,15 @@ func (c *consumer) AckWithTransaction(txn pulsar.Transaction, msg *Message) erro
 	defer c.mu.RUnlock()
 
 	if c.closed {
-		return fmt.Errorf("消费者已关闭")
+		return fmt.Errorf("consumer is closed")
 	}
 
 	if txn == nil {
-		return fmt.Errorf("事务不能为空")
+		return fmt.Errorf("transaction cannot be null")
 	}
 
 	if msg == nil || msg.internal == nil {
-		return fmt.Errorf("无效消息")
+		return fmt.Errorf("invalid message")
 	}
 
 	return c.internal.AckWithTxn(msg.internal, txn)

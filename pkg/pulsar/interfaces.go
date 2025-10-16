@@ -41,7 +41,11 @@ type Producer interface {
 
 	SendBatch(ctx context.Context, messages []BusinessMessage) (*BatchResult, error)
 
+	SendAsync(ctx context.Context, msg *pulsar.ProducerMessage, callback func(id MessageID, msg *pulsar.ProducerMessage, err error))
+
 	SendWithTransaction(ctx context.Context, txn pulsar.Transaction, payload []byte) error
+
+	FlushWithCtx(ctx context.Context) error
 
 	Close() error
 }

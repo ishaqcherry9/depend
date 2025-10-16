@@ -20,7 +20,7 @@ func (p *producer) Send(ctx context.Context, payload []byte) error {
 	defer p.mu.RUnlock()
 
 	if p.closed {
-		return fmt.Errorf("生产者已关闭")
+		return fmt.Errorf("producer is closed")
 	}
 
 	_, err := p.internal.Send(ctx, &pulsar.ProducerMessage{
@@ -28,7 +28,7 @@ func (p *producer) Send(ctx context.Context, payload []byte) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("发送消息失败: %w", err)
+		return fmt.Errorf("failed to send message: %w", err)
 	}
 
 	return nil
@@ -39,7 +39,7 @@ func (p *producer) SendWithKey(ctx context.Context, key string, payload []byte) 
 	defer p.mu.RUnlock()
 
 	if p.closed {
-		return fmt.Errorf("生产者已关闭")
+		return fmt.Errorf("producer is closed")
 	}
 
 	_, err := p.internal.Send(ctx, &pulsar.ProducerMessage{
@@ -48,7 +48,7 @@ func (p *producer) SendWithKey(ctx context.Context, key string, payload []byte) 
 	})
 
 	if err != nil {
-		return fmt.Errorf("发送消息失败: %w", err)
+		return fmt.Errorf("failed to send message: %w", err)
 	}
 
 	return nil
@@ -59,7 +59,7 @@ func (p *producer) SendDelayed(ctx context.Context, payload []byte, delay time.D
 	defer p.mu.RUnlock()
 
 	if p.closed {
-		return fmt.Errorf("生产者已关闭")
+		return fmt.Errorf("producer is closed")
 	}
 
 	_, err := p.internal.Send(ctx, &pulsar.ProducerMessage{
@@ -68,7 +68,7 @@ func (p *producer) SendDelayed(ctx context.Context, payload []byte, delay time.D
 	})
 
 	if err != nil {
-		return fmt.Errorf("发送延迟消息失败: %w", err)
+		return fmt.Errorf("failed to send delayed message: %w", err)
 	}
 
 	return nil
@@ -79,7 +79,7 @@ func (p *producer) SendBatch(ctx context.Context, messages []BusinessMessage) (*
 	defer p.mu.RUnlock()
 
 	if p.closed {
-		return nil, fmt.Errorf("生产者已关闭")
+		return nil, fmt.Errorf("producer is closed")
 	}
 
 	if len(messages) == 0 {
@@ -150,16 +150,29 @@ func (p *producer) SendBatch(ctx context.Context, messages []BusinessMessage) (*
 	return result, nil
 }
 
+func (p *producer) SendAsync(ctx context.Context, msg *pulsar.ProducerMessage, callback func(id MessageID, msg *pulsar.ProducerMessage, err error)) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	if p.closed {
+		if callback != nil {
+			callback(nil, msg, fmt.Errorf("producer is closed"))
+		}
+		return
+	}
+
+	p.internal.SendAsync(ctx, msg, callback)
+}
 func (p *producer) SendWithTransaction(ctx context.Context, txn pulsar.Transaction, payload []byte) error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
 	if p.closed {
-		return fmt.Errorf("生产者已关闭")
+		return fmt.Errorf("producer is closed")
 	}
 
 	if txn == nil {
-		return fmt.Errorf("事务不能为空")
+		return fmt.Errorf("transaction cannot be null")
 	}
 
 	_, err := p.internal.Send(ctx, &pulsar.ProducerMessage{
@@ -168,10 +181,21 @@ func (p *producer) SendWithTransaction(ctx context.Context, txn pulsar.Transacti
 	})
 
 	if err != nil {
-		return fmt.Errorf("事务发送失败: %w", err)
+		return fmt.Errorf("failed to send transaction: %w", err)
 	}
 
 	return nil
+}
+
+func (p *producer) FlushWithCtx(ctx context.Context) error {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	if p.closed {
+		return fmt.Errorf("producer is closed")
+	}
+
+	return p.internal.FlushWithCtx(ctx)
 }
 
 func (p *producer) Close() error {
