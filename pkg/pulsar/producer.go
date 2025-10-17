@@ -82,71 +82,39 @@ func (p *producer) SendBatch(ctx context.Context, messages []BusinessMessage) (*
 		return nil, fmt.Errorf("producer is closed")
 	}
 
-	if len(messages) == 0 {
+	if len(messages) <= 0 {
 		return &BatchResult{}, nil
 	}
 
-	type sendResult struct {
-		businessID string
-		messageID  MessageID
-		success    bool
+	result := &BatchResult{
+		SuccessIDs:         make([]MessageID, 0, len(messages)),
+		FailureBusinessIDs: make([]string, 0),
 	}
 
-	resultCh := make(chan sendResult, len(messages))
+	var mu sync.Mutex
 	var wg sync.WaitGroup
 
 	for _, msg := range messages {
 		wg.Add(1)
-		go func(businessMsg BusinessMessage) {
+		businessMsg := msg
+		p.internal.SendAsync(ctx, &pulsar.ProducerMessage{
+			Payload: businessMsg.Payload,
+		}, func(id pulsar.MessageID, message *pulsar.ProducerMessage, err error) {
 			defer wg.Done()
-
-			select {
-			case <-ctx.Done():
-				resultCh <- sendResult{
-					businessID: businessMsg.ID,
-					success:    false,
-				}
-				return
-			default:
-			}
-
-			messageID, err := p.internal.Send(ctx, &pulsar.ProducerMessage{
-				Payload: businessMsg.Payload,
-			})
-
+			mu.Lock()
+			defer mu.Unlock()
 			if err != nil {
-				resultCh <- sendResult{
-					businessID: businessMsg.ID,
-					success:    false,
-				}
+				result.FailureBusinessIDs = append(result.FailureBusinessIDs, businessMsg.ID)
 			} else {
-				resultCh <- sendResult{
-					businessID: businessMsg.ID,
-					messageID:  messageID,
-					success:    true,
-				}
+				result.SuccessIDs = append(result.SuccessIDs, id)
 			}
-		}(msg)
+		})
 	}
+	wg.Wait()
 
-	go func() {
-		wg.Wait()
-		close(resultCh)
-	}()
-
-	result := &BatchResult{
-		SuccessIDs:         make([]MessageID, 0),
-		FailureBusinessIDs: make([]string, 0),
+	if err := p.internal.FlushWithCtx(ctx); err != nil {
+		return result, fmt.Errorf("failed to flush messages: %w", err)
 	}
-
-	for res := range resultCh {
-		if res.success {
-			result.SuccessIDs = append(result.SuccessIDs, res.messageID)
-		} else {
-			result.FailureBusinessIDs = append(result.FailureBusinessIDs, res.businessID)
-		}
-	}
-
 	return result, nil
 }
 
