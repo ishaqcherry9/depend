@@ -25,7 +25,7 @@ require (
 	github.com/google/gofuzz v1.2.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/huandu/xstrings v1.5.0
-	github.com/ishaqcherry9/nacos_sdk_go v1.0.0
+	github.com/nacos-group/nacos-sdk-go v1.1.6
 	github.com/jinzhu/copier v0.4.0
 	github.com/json-iterator/go v1.1.12
 	github.com/mgtv-tech/jetcache-go v1.2.4
@@ -63,8 +63,6 @@ require (
 	gorm.io/gorm v1.30.1
 	gorm.io/plugin/dbresolver v1.6.2
 )
-
-require github.com/nacos-group/nacos-sdk-go v1.1.6
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect

@@ -355,8 +355,6 @@ github.com/hashicorp/go-multierror v1.1.1/go.mod h1:iw975J/qwKPdAO1clOe2L8331t/9
 github.com/huandu/xstrings v1.5.0 h1:2ag3IFq9ZDANvthTwTiqSSZLjDc+BedvHPAp5tJy2TI=
 github.com/huandu/xstrings v1.5.0/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
 github.com/ianlancetaylor/demangle v0.0.0-20230524184225-eabc099b10ab/go.mod h1:gx7rwoVhcfuVKG5uya9Hs3Sxj7EIvldVofAWIUtGouw=
-github.com/ishaqcherry9/nacos_sdk_go v1.0.0 h1:XAVPADqaHVx7zVt9z7B5a85nPZPq1j0d/mK48YNEcBM=
-github.com/ishaqcherry9/nacos_sdk_go v1.0.0/go.mod h1:szbgx/AWK5U3rou049XCcV5giBvEuQvZuRRO63X9TCU=
 github.com/jinzhu/copier v0.4.0 h1:w3ciUoD19shMCRargcpm0cm91ytaBhDvuRpz1ODO/U8=
 github.com/jinzhu/copier v0.4.0/go.mod h1:DfbEm0FYsaqBcKcFuvmOZb218JkPGtvSHsKg8S8hyyg=
 github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=
@@ -449,6 +447,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/nacos-group/nacos-sdk-go v1.1.6 h1:zjn7CIoz0RxPHCalWc9kXOQx94oUFQl5J1rctbq2mYU=
 github.com/nacos-group/nacos-sdk-go v1.1.6/go.mod h1:cBv9wy5iObs7khOqov1ERFQrCuTR4ILpgaiaVMxEmGI=
+github.com/nacos-group/nacos-sdk-go/v2 v2.3.3 h1:lvkBZcYkKENLVR1ubO+vGxTP2L4VtVSArLvYZKuu4Pk=
+github.com/nacos-group/nacos-sdk-go/v2 v2.3.3/go.mod h1:ygUBdt7eGeYBt6Lz2HO3wx7crKXk25Mp80568emGMWU=
 github.com/natefinch/lumberjack v2.0.0+incompatible h1:4QJd3OLAMgj7ph+yZTuX13Ld4UpgHp07nNdFX7mqFfM=
 github.com/natefinch/lumberjack v2.0.0+incompatible/go.mod h1:Wi9p2TTF5DG5oU+6YfsmYQpsTIOm0B1VNzQg9Mw6nPk=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
