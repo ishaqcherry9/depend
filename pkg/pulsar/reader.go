@@ -20,12 +20,12 @@ func (r *reader) Next(ctx context.Context) (*Message, error) {
 	defer r.mu.RUnlock()
 
 	if r.closed {
-		return nil, fmt.Errorf("Reader已关闭")
+		return nil, fmt.Errorf("reader is closed")
 	}
 
 	msg, err := r.internal.Next(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("读取消息失败: %w", err)
+		return nil, fmt.Errorf("failed to read message: %w", err)
 	}
 
 	return &Message{
@@ -53,7 +53,7 @@ func (r *reader) Seek(messageID MessageID) error {
 	defer r.mu.RUnlock()
 
 	if r.closed {
-		return fmt.Errorf("Reader已关闭")
+		return fmt.Errorf("reader is closed")
 	}
 
 	return r.internal.Seek(messageID)
@@ -64,7 +64,7 @@ func (r *reader) SeekByTime(timestamp time.Time) error {
 	defer r.mu.RUnlock()
 
 	if r.closed {
-		return fmt.Errorf("Reader已关闭")
+		return fmt.Errorf("reader is closed")
 	}
 
 	return r.internal.SeekByTime(timestamp)

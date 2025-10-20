@@ -20,13 +20,13 @@ type BatchResult struct {
 }
 
 type Client interface {
-	Producer(topic string, opts ...ProducerOption) (Producer, error)
+	Producer(opts pulsar.ProducerOptions) (Producer, error)
 
-	Consumer(topic, subscription string, opts ...ConsumerOption) (Consumer, error)
+	Consumer(opts pulsar.ConsumerOptions) (Consumer, error)
 
-	MultiTopicConsumer(topicPattern, subscription string, opts ...ConsumerOption) (Consumer, error)
+	MultiTopicConsumer(opts pulsar.ConsumerOptions) (Consumer, error)
 
-	Reader(topic string, startMessageID MessageID, opts ...ReaderOption) (Reader, error)
+	Reader(opts pulsar.ReaderOptions) (Reader, error)
 
 	BeginTransaction(timeout time.Duration) (pulsar.Transaction, error)
 
@@ -41,7 +41,11 @@ type Producer interface {
 
 	SendBatch(ctx context.Context, messages []BusinessMessage) (*BatchResult, error)
 
+	SendAsync(ctx context.Context, msg *pulsar.ProducerMessage, callback func(id MessageID, msg *pulsar.ProducerMessage, err error))
+
 	SendWithTransaction(ctx context.Context, txn pulsar.Transaction, payload []byte) error
+
+	FlushWithCtx(ctx context.Context) error
 
 	Close() error
 }

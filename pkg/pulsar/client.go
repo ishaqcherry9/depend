@@ -65,73 +65,38 @@ func CloseClient() error {
 	return nil
 }
 
-func (c *client) Producer(topic string, opts ...ProducerOption) (Producer, error) {
-	options := pulsar.ProducerOptions{
-		Topic: topic,
-	}
-
-	for _, opt := range opts {
-		opt(&options)
-	}
-
-	internal, err := c.internal.CreateProducer(options)
+func (c *client) Producer(opts pulsar.ProducerOptions) (Producer, error) {
+	internal, err := c.internal.CreateProducer(opts)
 	if err != nil {
-		return nil, fmt.Errorf("创建生产者失败: %w", err)
+		return nil, fmt.Errorf("failed to create producer: %w", err)
 	}
 
 	return &producer{internal: internal}, nil
 }
 
-func (c *client) Consumer(topic, subscription string, opts ...ConsumerOption) (Consumer, error) {
-	options := pulsar.ConsumerOptions{
-		Topic:                          topic,
-		SubscriptionName:               subscription,
-		EnableBatchIndexAcknowledgment: true,
-	}
-
-	for _, opt := range opts {
-		opt(&options)
-	}
-
-	internal, err := c.internal.Subscribe(options)
+func (c *client) Consumer(opts pulsar.ConsumerOptions) (Consumer, error) {
+	internal, err := c.internal.Subscribe(opts)
 	if err != nil {
-		return nil, fmt.Errorf("创建消费者失败: %w", err)
+		return nil, fmt.Errorf("failed to create consumer: %w", err)
 	}
 
 	return &consumer{internal: internal}, nil
 }
 
-func (c *client) MultiTopicConsumer(topicPattern, subscription string, opts ...ConsumerOption) (Consumer, error) {
-	options := pulsar.ConsumerOptions{
-		TopicsPattern:    topicPattern,
-		SubscriptionName: subscription,
-	}
-
-	for _, opt := range opts {
-		opt(&options)
-	}
-
-	internal, err := c.internal.Subscribe(options)
+func (c *client) MultiTopicConsumer(opts pulsar.ConsumerOptions) (Consumer, error) {
+	internal, err := c.internal.Subscribe(opts)
 	if err != nil {
-		return nil, fmt.Errorf("创建多主题消费者失败: %w", err)
+		return nil, fmt.Errorf("failed to create multi-topic consumer: %w", err)
 	}
 
 	return &consumer{internal: internal}, nil
 }
 
-func (c *client) Reader(topic string, startMessageID MessageID, opts ...ReaderOption) (Reader, error) {
-	options := pulsar.ReaderOptions{
-		Topic:          topic,
-		StartMessageID: startMessageID,
-	}
+func (c *client) Reader(opts pulsar.ReaderOptions) (Reader, error) {
 
-	for _, opt := range opts {
-		opt(&options)
-	}
-
-	internal, err := c.internal.CreateReader(options)
+	internal, err := c.internal.CreateReader(opts)
 	if err != nil {
-		return nil, fmt.Errorf("创建Reader失败: %w", err)
+		return nil, fmt.Errorf("failed to create Reader: %w", err)
 	}
 
 	return &reader{internal: internal}, nil
@@ -140,7 +105,7 @@ func (c *client) Reader(topic string, startMessageID MessageID, opts ...ReaderOp
 func (c *client) BeginTransaction(timeout time.Duration) (pulsar.Transaction, error) {
 	txn, err := c.internal.NewTransaction(timeout)
 	if err != nil {
-		return nil, fmt.Errorf("创建事务失败: %w", err)
+		return nil, fmt.Errorf("failed to create transaction: %w", err)
 	}
 
 	return txn, nil
