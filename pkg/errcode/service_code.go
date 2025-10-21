@@ -156,7 +156,7 @@ func WrapDBErr(err error) *Error {
 			return DBErrConnRefused
 		case 2013:
 			return DBErrConnLost
-		case 1064: // ER_PARSE_ERROR
+		case 1064:
 			return DBErrSyntax
 		}
 	}
