@@ -3,29 +3,24 @@ package cache
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
-	"github.com/redis/go-redis/v9"
-
 	"github.com/ishaqcherry9/depend/pkg/encoding"
+	"github.com/redis/go-redis/v9"
 )
 
-var CacheNotFound = redis.Nil
-
-type redisCache struct {
-	client            *redis.Client
+type redisClusterCache struct {
+	client            *redis.ClusterClient
 	KeyPrefix         string
 	encoding          encoding.Encoding
 	DefaultExpireTime time.Duration
 	newObject         func() interface{}
 }
 
-func NewRedisCache(client *redis.Client, keyPrefix string, encode encoding.Encoding, newObject func() interface{}) Cache {
-	return &redisCache{
+func NewRedisClusterCache(client *redis.ClusterClient, keyPrefix string, encode encoding.Encoding, newObject func() interface{}) Cache {
+	return &redisClusterCache{
 		client:    client,
 		KeyPrefix: keyPrefix,
 		encoding:  encode,
@@ -33,7 +28,7 @@ func NewRedisCache(client *redis.Client, keyPrefix string, encode encoding.Encod
 	}
 }
 
-func (c *redisCache) Set(ctx context.Context, key string, val interface{}, expiration time.Duration) error {
+func (c *redisClusterCache) Set(ctx context.Context, key string, val interface{}, expiration time.Duration) error {
 	buf, err := encoding.Marshal(c.encoding, val)
 	if err != nil {
 		return fmt.Errorf("encoding.Marshal error: %v, key=%s, val=%+v ", err, key, val)
@@ -54,7 +49,7 @@ func (c *redisCache) Set(ctx context.Context, key string, val interface{}, expir
 	return nil
 }
 
-func (c *redisCache) Get(ctx context.Context, key string, val interface{}) error {
+func (c *redisClusterCache) Get(ctx context.Context, key string, val interface{}) error {
 	cacheKey, err := BuildCacheKey(c.KeyPrefix, key)
 	if err != nil {
 		return fmt.Errorf("BuildCacheKey error: %v, key=%s", err, key)
@@ -76,7 +71,7 @@ func (c *redisCache) Get(ctx context.Context, key string, val interface{}) error
 	return nil
 }
 
-func (c *redisCache) MultiSet(ctx context.Context, valueMap map[string]interface{}, expiration time.Duration) error {
+func (c *redisClusterCache) MultiSet(ctx context.Context, valueMap map[string]interface{}, expiration time.Duration) error {
 	if len(valueMap) == 0 {
 		return nil
 	}
@@ -116,7 +111,7 @@ func (c *redisCache) MultiSet(ctx context.Context, valueMap map[string]interface
 	return nil
 }
 
-func (c *redisCache) MultiGet(ctx context.Context, keys []string, value interface{}) error {
+func (c *redisClusterCache) MultiGet(ctx context.Context, keys []string, value interface{}) error {
 	if len(keys) == 0 {
 		return nil
 	}
@@ -145,7 +140,7 @@ func (c *redisCache) MultiGet(ctx context.Context, keys []string, value interfac
 		object := c.newObject()
 		err = encoding.Unmarshal(c.encoding, dataBytes, object)
 		if err != nil {
-			fmt.Printf("unmarshal data error: %+v, cacheKey=%s valueType=%T\n", err, cacheKeys[i], value)
+			fmt.Printf("unmarshal data error: %+v, cacheKey=%s type=%T\n", err, cacheKeys[i], value)
 			continue
 		}
 		valueMap.SetMapIndex(reflect.ValueOf(cacheKeys[i]), reflect.ValueOf(object))
@@ -153,7 +148,7 @@ func (c *redisCache) MultiGet(ctx context.Context, keys []string, value interfac
 	return nil
 }
 
-func (c *redisCache) Del(ctx context.Context, keys ...string) error {
+func (c *redisClusterCache) Del(ctx context.Context, keys ...string) error {
 	if len(keys) == 0 {
 		return nil
 	}
@@ -173,24 +168,11 @@ func (c *redisCache) Del(ctx context.Context, keys ...string) error {
 	return nil
 }
 
-func (c *redisCache) SetCacheWithNotFound(ctx context.Context, key string) error {
+func (c *redisClusterCache) SetCacheWithNotFound(ctx context.Context, key string) error {
 	cacheKey, err := BuildCacheKey(c.KeyPrefix, key)
 	if err != nil {
 		return fmt.Errorf("BuildCacheKey error: %v, key=%s", err, key)
 	}
 
 	return c.client.Set(ctx, cacheKey, NotFoundPlaceholder, DefaultNotFoundExpireTime).Err()
-}
-
-func BuildCacheKey(keyPrefix string, key string) (string, error) {
-	if key == "" {
-		return "", errors.New("[cache] key should not be empty")
-	}
-
-	cacheKey := key
-	if keyPrefix != "" {
-		cacheKey = strings.Join([]string{keyPrefix, key}, ":")
-	}
-
-	return cacheKey, nil
 }
