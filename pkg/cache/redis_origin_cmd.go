@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"time"
 
+	redisCmd "github.com/ishaqcherry9/depend/pkg/cache/redis"
 	"github.com/ishaqcherry9/depend/pkg/encoding"
 	"github.com/redis/go-redis/v9"
 )
@@ -55,11 +56,7 @@ type RedisOriginCmds interface {
 	Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd
 }
 
-type redisOriginCmds struct {
-	client *redis.Client
-}
-
-var _ RedisOriginCmds = (*redisOriginCmds)(nil)
+var _ RedisOriginCmds = (*redisCmd.OriginCmds)(nil)
 
 type redisOriginCmdCache struct {
 	client            *redis.Client
@@ -76,7 +73,7 @@ func NewRedisOriginCmdCache(client *redis.Client, keyPrefix string, encode encod
 		KeyPrefix:       keyPrefix,
 		encoding:        encode,
 		newObject:       newObject,
-		RedisOriginCmds: &redisOriginCmds{client: client},
+		RedisOriginCmds: &redisCmd.OriginCmds{Client: client},
 	}
 }
 
@@ -96,7 +93,7 @@ func (c *redisOriginCmdCache) Set(ctx context.Context, key string, val interface
 	}
 	err = c.client.Set(ctx, cacheKey, buf, expiration).Err()
 	if err != nil {
-		return fmt.Errorf("c.client.Set error: %v, cacheKey=%s", err, cacheKey)
+		return fmt.Errorf("c.RedisOriginCmds.Set error: %v, cacheKey=%s", err, cacheKey)
 	}
 	return nil
 }
@@ -138,7 +135,7 @@ func (c *redisOriginCmdCache) Del(ctx context.Context, keys ...string) error {
 	}
 	err := c.client.Del(ctx, cacheKeys...).Err()
 	if err != nil {
-		return fmt.Errorf("c.client.Del error: %v, keys=%+v", err, cacheKeys)
+		return fmt.Errorf("c.RedisOriginCmds.Del error: %v, keys=%+v", err, cacheKeys)
 	}
 	return nil
 }
@@ -163,7 +160,7 @@ func (c *redisOriginCmdCache) MultiSet(ctx context.Context, valueMap map[string]
 		paris = append(paris, []byte(cacheKey))
 		paris = append(paris, buf)
 	}
-	pipeline := c.client.Pipeline()
+	pipeline := c.RedisOriginCmds.Pipeline()
 	err := pipeline.MSet(ctx, paris...).Err()
 	if err != nil {
 		return fmt.Errorf("pipeline.MSet error: %v", err)
@@ -197,7 +194,7 @@ func (c *redisOriginCmdCache) MultiGet(ctx context.Context, keys []string, value
 	}
 	values, err := c.client.MGet(ctx, cacheKeys...).Result()
 	if err != nil {
-		return fmt.Errorf("c.client.MGet error: %v, keys=%+v", err, cacheKeys)
+		return fmt.Errorf("c.RedisOriginCmds.MGet error: %v, keys=%+v", err, cacheKeys)
 	}
 
 	valueMap := reflect.ValueOf(value)
@@ -226,199 +223,202 @@ func (c *redisOriginCmdCache) SetCacheWithNotFound(ctx context.Context, key stri
 		return fmt.Errorf("BuildCacheKey error: %v, key=%s", err, key)
 	}
 
-	return c.client.Set(ctx, cacheKey, NotFoundPlaceholder, DefaultNotFoundExpireTime).Err()
+	return c.RedisOriginCmds.Set(ctx, cacheKey, NotFoundPlaceholder, DefaultNotFoundExpireTime).Err()
 }
 
-func (c *redisOriginCmds) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd {
-	return c.client.Set(ctx, key, value, expiration)
+// OriginSet 原生未做任何封装的Set命令
+func (c *redisOriginCmdCache) OriginSet(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd {
+	return c.RedisOriginCmds.Set(ctx, key, value, expiration)
 }
 
-func (c *redisOriginCmds) Get(ctx context.Context, key string) *redis.StringCmd {
-	return c.client.Get(ctx, key)
+// OriginGet 原生未做任何封装的Get命令
+func (c *redisOriginCmdCache) OriginGet(ctx context.Context, key string) *redis.StringCmd {
+	return c.RedisOriginCmds.Get(ctx, key)
 }
 
-func (c *redisOriginCmds) Del(ctx context.Context, keys ...string) *redis.IntCmd {
+// OriginDel 原生未做任何封装的Del命令
+func (c *redisOriginCmdCache) OriginDel(ctx context.Context, keys ...string) *redis.IntCmd {
 	if len(keys) == 0 {
-		return c.client.Del(ctx)
+		return c.RedisOriginCmds.Del(ctx)
 	}
-	return c.client.Del(ctx, keys...)
+	return c.RedisOriginCmds.Del(ctx, keys...)
 }
 
-func (c *redisOriginCmds) SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.BoolCmd {
-	return c.client.SetNX(ctx, key, value, expiration)
+func (c *redisOriginCmdCache) SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.BoolCmd {
+	return c.RedisOriginCmds.SetNX(ctx, key, value, expiration)
 }
 
-func (c *redisOriginCmds) Exists(ctx context.Context, keys ...string) *redis.IntCmd {
+func (c *redisOriginCmdCache) Exists(ctx context.Context, keys ...string) *redis.IntCmd {
 	if len(keys) == 0 {
-		return c.client.Exists(ctx)
+		return c.RedisOriginCmds.Exists(ctx)
 	}
-	return c.client.Exists(ctx, keys...)
+	return c.RedisOriginCmds.Exists(ctx, keys...)
 }
 
-func (c *redisOriginCmds) Expire(ctx context.Context, key string, expiration time.Duration) *redis.BoolCmd {
-	return c.client.Expire(ctx, key, expiration)
+func (c *redisOriginCmdCache) Expire(ctx context.Context, key string, expiration time.Duration) *redis.BoolCmd {
+	return c.RedisOriginCmds.Expire(ctx, key, expiration)
 }
 
-func (c *redisOriginCmds) Incr(ctx context.Context, key string) *redis.IntCmd {
-	return c.client.Incr(ctx, key)
+func (c *redisOriginCmdCache) Incr(ctx context.Context, key string) *redis.IntCmd {
+	return c.RedisOriginCmds.Incr(ctx, key)
 }
 
-func (c *redisOriginCmds) Decr(ctx context.Context, key string) *redis.IntCmd {
-	return c.client.Decr(ctx, key)
+func (c *redisOriginCmdCache) Decr(ctx context.Context, key string) *redis.IntCmd {
+	return c.RedisOriginCmds.Decr(ctx, key)
 }
 
-func (c *redisOriginCmds) HSet(ctx context.Context, key string, values ...interface{}) *redis.IntCmd {
-	return c.client.HSet(ctx, key, values...)
+func (c *redisOriginCmdCache) HSet(ctx context.Context, key string, values ...interface{}) *redis.IntCmd {
+	return c.RedisOriginCmds.HSet(ctx, key, values...)
 }
 
-func (c *redisOriginCmds) HGet(ctx context.Context, key, field string) *redis.StringCmd {
-	return c.client.HGet(ctx, key, field)
+func (c *redisOriginCmdCache) HGet(ctx context.Context, key, field string) *redis.StringCmd {
+	return c.RedisOriginCmds.HGet(ctx, key, field)
 }
 
-func (c *redisOriginCmds) HMSet(ctx context.Context, key string, values ...interface{}) *redis.BoolCmd {
-	return c.client.HMSet(ctx, key, values...)
+func (c *redisOriginCmdCache) HMSet(ctx context.Context, key string, values ...interface{}) *redis.BoolCmd {
+	return c.RedisOriginCmds.HMSet(ctx, key, values...)
 }
 
-func (c *redisOriginCmds) HMGet(ctx context.Context, key string, field ...string) *redis.SliceCmd {
-	return c.client.HMGet(ctx, key, field...)
+func (c *redisOriginCmdCache) HMGet(ctx context.Context, key string, field ...string) *redis.SliceCmd {
+	return c.RedisOriginCmds.HMGet(ctx, key, field...)
 }
 
-func (c *redisOriginCmds) HDel(ctx context.Context, key string, fields ...string) *redis.IntCmd {
+func (c *redisOriginCmdCache) HDel(ctx context.Context, key string, fields ...string) *redis.IntCmd {
 	if len(fields) == 0 {
-		return c.client.HDel(ctx, key)
+		return c.RedisOriginCmds.HDel(ctx, key)
 	}
-	return c.client.HDel(ctx, key, fields...)
+	return c.RedisOriginCmds.HDel(ctx, key, fields...)
 }
 
-func (c *redisOriginCmds) LPush(ctx context.Context, key string, values ...interface{}) *redis.IntCmd {
-	return c.client.LPush(ctx, key, values...)
+func (c *redisOriginCmdCache) LPush(ctx context.Context, key string, values ...interface{}) *redis.IntCmd {
+	return c.RedisOriginCmds.LPush(ctx, key, values...)
 }
 
-func (c *redisOriginCmds) RPush(ctx context.Context, key string, values ...interface{}) *redis.IntCmd {
-	return c.client.RPush(ctx, key, values...)
+func (c *redisOriginCmdCache) RPush(ctx context.Context, key string, values ...interface{}) *redis.IntCmd {
+	return c.RedisOriginCmds.RPush(ctx, key, values...)
 }
 
-func (c *redisOriginCmds) LPop(ctx context.Context, key string) *redis.StringCmd {
-	return c.client.LPop(ctx, key)
+func (c *redisOriginCmdCache) LPop(ctx context.Context, key string) *redis.StringCmd {
+	return c.RedisOriginCmds.LPop(ctx, key)
 }
 
-func (c *redisOriginCmds) RPop(ctx context.Context, key string) *redis.StringCmd {
-	return c.client.RPop(ctx, key)
+func (c *redisOriginCmdCache) RPop(ctx context.Context, key string) *redis.StringCmd {
+	return c.RedisOriginCmds.RPop(ctx, key)
 }
 
-func (c *redisOriginCmds) SAdd(ctx context.Context, key string, members ...interface{}) *redis.IntCmd {
-	return c.client.SAdd(ctx, key, members...)
+func (c *redisOriginCmdCache) SAdd(ctx context.Context, key string, members ...interface{}) *redis.IntCmd {
+	return c.RedisOriginCmds.SAdd(ctx, key, members...)
 }
 
-func (c *redisOriginCmds) SMembers(ctx context.Context, key string) *redis.StringSliceCmd {
-	return c.client.SMembers(ctx, key)
+func (c *redisOriginCmdCache) SMembers(ctx context.Context, key string) *redis.StringSliceCmd {
+	return c.RedisOriginCmds.SMembers(ctx, key)
 }
 
-func (c *redisOriginCmds) ZAdd(ctx context.Context, key string, members ...redis.Z) *redis.IntCmd {
-	return c.client.ZAdd(ctx, key, members...)
+func (c *redisOriginCmdCache) ZAdd(ctx context.Context, key string, members ...redis.Z) *redis.IntCmd {
+	return c.RedisOriginCmds.ZAdd(ctx, key, members...)
 }
 
-func (c *redisOriginCmds) ZRange(ctx context.Context, key string, start, stop int64) *redis.StringSliceCmd {
-	return c.client.ZRange(ctx, key, start, stop)
+func (c *redisOriginCmdCache) ZRange(ctx context.Context, key string, start, stop int64) *redis.StringSliceCmd {
+	return c.RedisOriginCmds.ZRange(ctx, key, start, stop)
 }
 
-func (c *redisOriginCmds) ZRangeWithScores(ctx context.Context, key string, start, stop int64) *redis.ZSliceCmd {
-	return c.client.ZRangeWithScores(ctx, key, start, stop)
+func (c *redisOriginCmdCache) ZRangeWithScores(ctx context.Context, key string, start, stop int64) *redis.ZSliceCmd {
+	return c.RedisOriginCmds.ZRangeWithScores(ctx, key, start, stop)
 }
 
-func (c *redisOriginCmds) ZIncrBy(ctx context.Context, key string, increment float64, member string) *redis.FloatCmd {
-	return c.client.ZIncrBy(ctx, key, increment, member)
+func (c *redisOriginCmdCache) ZIncrBy(ctx context.Context, key string, increment float64, member string) *redis.FloatCmd {
+	return c.RedisOriginCmds.ZIncrBy(ctx, key, increment, member)
 }
 
-func (c *redisOriginCmds) ZRem(ctx context.Context, key string, members ...interface{}) *redis.IntCmd {
-	return c.client.ZRem(ctx, key, members...)
+func (c *redisOriginCmdCache) ZRem(ctx context.Context, key string, members ...interface{}) *redis.IntCmd {
+	return c.RedisOriginCmds.ZRem(ctx, key, members...)
 }
 
-func (c *redisOriginCmds) Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd {
-	return c.client.Publish(ctx, channel, message)
+func (c *redisOriginCmdCache) Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd {
+	return c.RedisOriginCmds.Publish(ctx, channel, message)
 }
 
-func (c *redisOriginCmds) Subscribe(ctx context.Context, channels ...string) *redis.PubSub {
+func (c *redisOriginCmdCache) Subscribe(ctx context.Context, channels ...string) *redis.PubSub {
 	if len(channels) == 0 {
-		return c.client.Subscribe(ctx)
+		return c.RedisOriginCmds.Subscribe(ctx)
 	}
-	return c.client.Subscribe(ctx, channels...)
+	return c.RedisOriginCmds.Subscribe(ctx, channels...)
 }
 
-func (c *redisOriginCmds) SetArgs(ctx context.Context, key string, value interface{}, a redis.SetArgs) *redis.StatusCmd {
-	return c.client.SetArgs(ctx, key, value, a)
+func (c *redisOriginCmdCache) SetArgs(ctx context.Context, key string, value interface{}, a redis.SetArgs) *redis.StatusCmd {
+	return c.RedisOriginCmds.SetArgs(ctx, key, value, a)
 }
 
-func (c *redisOriginCmds) Pipelined(ctx context.Context, fn func(redis.Pipeliner) error) ([]redis.Cmder, error) {
-	return c.client.Pipelined(ctx, fn)
+func (c *redisOriginCmdCache) Pipelined(ctx context.Context, fn func(redis.Pipeliner) error) ([]redis.Cmder, error) {
+	return c.RedisOriginCmds.Pipelined(ctx, fn)
 }
 
-func (c *redisOriginCmds) Pipeline() redis.Pipeliner {
-	return c.client.Pipeline()
+func (c *redisOriginCmdCache) Pipeline() redis.Pipeliner {
+	return c.RedisOriginCmds.Pipeline()
 }
 
-func (c *redisOriginCmds) TxPipelined(ctx context.Context, fn func(redis.Pipeliner) error) ([]redis.Cmder, error) {
-	return c.client.TxPipelined(ctx, fn)
+func (c *redisOriginCmdCache) TxPipelined(ctx context.Context, fn func(redis.Pipeliner) error) ([]redis.Cmder, error) {
+	return c.RedisOriginCmds.TxPipelined(ctx, fn)
 }
 
-func (c *redisOriginCmds) TxPipeline() redis.Pipeliner {
-	return c.client.TxPipeline()
+func (c *redisOriginCmdCache) TxPipeline() redis.Pipeliner {
+	return c.RedisOriginCmds.TxPipeline()
 }
 
-func (c *redisOriginCmds) Process(ctx context.Context, cmd redis.Cmder) error {
-	return c.client.Process(ctx, cmd)
+func (c *redisOriginCmdCache) Process(ctx context.Context, cmd redis.Cmder) error {
+	return c.RedisOriginCmds.Process(ctx, cmd)
 }
 
-func (c *redisOriginCmds) Options() *redis.Options {
-	return c.client.Options()
+func (c *redisOriginCmdCache) Options() *redis.Options {
+	return c.RedisOriginCmds.Options()
 }
 
-func (c *redisOriginCmds) PoolStats() *redis.PoolStats {
-	return c.client.PoolStats()
+func (c *redisOriginCmdCache) PoolStats() *redis.PoolStats {
+	return c.RedisOriginCmds.PoolStats()
 }
 
-func (c *redisOriginCmds) PSubscribe(ctx context.Context, channels ...string) *redis.PubSub {
+func (c *redisOriginCmdCache) PSubscribe(ctx context.Context, channels ...string) *redis.PubSub {
 	if len(channels) == 0 {
-		return c.client.PSubscribe(ctx)
+		return c.RedisOriginCmds.PSubscribe(ctx)
 	}
-	return c.client.PSubscribe(ctx, channels...)
+	return c.RedisOriginCmds.PSubscribe(ctx, channels...)
 }
 
-func (c *redisOriginCmds) SSubscribe(ctx context.Context, channels ...string) *redis.PubSub {
+func (c *redisOriginCmdCache) SSubscribe(ctx context.Context, channels ...string) *redis.PubSub {
 	if len(channels) == 0 {
-		return c.client.SSubscribe(ctx)
+		return c.RedisOriginCmds.SSubscribe(ctx)
 	}
-	return c.client.SSubscribe(ctx, channels...)
+	return c.RedisOriginCmds.SSubscribe(ctx, channels...)
 }
 
-func (c *redisOriginCmds) NewSearchBuilder(ctx context.Context, index, query string) *redis.SearchBuilder {
-	return c.client.NewSearchBuilder(ctx, index, query)
+func (c *redisOriginCmdCache) NewSearchBuilder(ctx context.Context, index, query string) *redis.SearchBuilder {
+	return c.RedisOriginCmds.NewSearchBuilder(ctx, index, query)
 }
 
-func (c *redisOriginCmds) NewAggregateBuilder(ctx context.Context, index, query string) *redis.AggregateBuilder {
-	return c.client.NewAggregateBuilder(ctx, index, query)
+func (c *redisOriginCmdCache) NewAggregateBuilder(ctx context.Context, index, query string) *redis.AggregateBuilder {
+	return c.RedisOriginCmds.NewAggregateBuilder(ctx, index, query)
 }
 
-func (c *redisOriginCmds) NewCreateIndexBuilder(ctx context.Context, index string) *redis.CreateIndexBuilder {
-	return c.client.NewCreateIndexBuilder(ctx, index)
+func (c *redisOriginCmdCache) NewCreateIndexBuilder(ctx context.Context, index string) *redis.CreateIndexBuilder {
+	return c.RedisOriginCmds.NewCreateIndexBuilder(ctx, index)
 }
 
-func (c *redisOriginCmds) NewDropIndexBuilder(ctx context.Context, index string) *redis.DropIndexBuilder {
-	return c.client.NewDropIndexBuilder(ctx, index)
+func (c *redisOriginCmdCache) NewDropIndexBuilder(ctx context.Context, index string) *redis.DropIndexBuilder {
+	return c.RedisOriginCmds.NewDropIndexBuilder(ctx, index)
 }
 
 // RedisClient 返回底层原始的Client，用于需要直接访问底层 API 的特殊场景
-func (c *redisOriginCmds) RedisClient() *redis.Client {
-	if c == nil || c.client == nil {
+func (c *redisOriginCmdCache) RedisClient() *redis.Client {
+	if c == nil || c.RedisOriginCmds == nil {
 		return nil
 	}
 	return c.client
 }
 
 // Eval 允许执行 Lua 脚本（EVAL）——传入的 keys 会被包装器加上前缀。
-func (c *redisOriginCmds) Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd {
+func (c *redisOriginCmdCache) Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd {
 	if len(keys) == 0 {
-		return c.client.Eval(ctx, script, nil, args...)
+		return c.RedisOriginCmds.Eval(ctx, script, nil, args...)
 	}
-	return c.client.Eval(ctx, script, keys, args...)
+	return c.RedisOriginCmds.Eval(ctx, script, keys, args...)
 }
