@@ -60,12 +60,10 @@ type RedisOriginCmdCache struct {
 	newObject         func() interface{}
 }
 
-func NewRedisOriginCmdCache(client *redis.Client, keyPrefix string, encode encoding.Encoding, newObject func() interface{}) *RedisOriginCmdCache {
+func NewRedisOriginCmdCache(client *redis.Client, keyPrefix string) *RedisOriginCmdCache {
 	return &RedisOriginCmdCache{
 		client:    client,
 		KeyPrefix: keyPrefix,
-		encoding:  encode,
-		newObject: newObject,
 	}
 }
 
