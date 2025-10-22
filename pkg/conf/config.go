@@ -20,6 +20,12 @@ type AppConfig struct {
 	Extend                map[string]interface{} `yaml:"extend" json:"extend"`
 }
 
+type JaegerConfig struct {
+	AgentHost string                 `yaml:"agentHost" json:"agentHost"`
+	AgentPort int                    `yaml:"agentPort" json:"agentPort"`
+	Extend    map[string]interface{} `yaml:"extend" json:"extend"`
+}
+
 type MySqlConfig struct {
 	Name            string                 `yaml:"name" json:"name"`
 	IP              string                 `yaml:"ip" json:"ip"`
