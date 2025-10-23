@@ -3,6 +3,7 @@ package dlock
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
@@ -10,7 +11,10 @@ import (
 )
 
 type RedisLock struct {
-	mutex *redsync.Mutex
+	rs     *redsync.Redsync // redsync 实例
+	mutex  *redsync.Mutex   // redsync 锁
+	key    string           // 锁的 key
+	closed int32            // 0: open, 1: closed
 }
 
 func NewRedisLock(client *redis.Client, key string, options ...redsync.Option) (Locker, error) {
@@ -40,10 +44,12 @@ func newLocker(delegate redis.UniversalClient, key string, options ...redsync.Op
 
 	return &RedisLock{
 		mutex: mutex,
+		rs:    rs,
+		key:   key,
 	}
 }
 
-func (l *RedisLock) TryLock(ctx context.Context) (bool, error) {
+func (l *RedisLock) TryLock(ctx context.Context, timeout time.Duration) (bool, error) {
 	err := l.mutex.TryLockContext(ctx)
 	if err == nil {
 		return true, nil

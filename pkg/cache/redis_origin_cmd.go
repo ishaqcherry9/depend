@@ -49,6 +49,7 @@ type RedisOriginCmds interface {
 	NewAggregateBuilder(ctx context.Context, index, query string) *redis.AggregateBuilder
 	NewCreateIndexBuilder(ctx context.Context, index string) *redis.CreateIndexBuilder
 	NewDropIndexBuilder(ctx context.Context, index string) *redis.DropIndexBuilder
+	RedisClient(ctx context.Context) *redis.Client
 	Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd
 }
 
@@ -246,7 +247,7 @@ func (c *RedisOriginCmdCache) NewDropIndexBuilder(ctx context.Context, index str
 }
 
 // RedisClient 返回底层原始的Client，用于需要直接访问底层 API 的特殊场景
-func (c *RedisOriginCmdCache) RedisClient() *redis.Client {
+func (c *RedisOriginCmdCache) RedisClient(ctx context.Context) *redis.Client {
 	if c == nil || c.client == nil {
 		return nil
 	}
