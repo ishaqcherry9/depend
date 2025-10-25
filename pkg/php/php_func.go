@@ -44,6 +44,18 @@ func BcDiv(d1, d2 decimal.Decimal, precision int32) (decimal.Decimal, error) {
 	return d1.Div(d2), nil
 }
 
+// BcDivRoundUp divides two Decimals with precision .
+func BcDivRoundUp(d1, d2 decimal.Decimal, precision int32) (decimal.Decimal, error) {
+	if d2.Sign() == 0 {
+		return decimal.Zero, fmt.Errorf("division by zero")
+	}
+
+	if precision > 0 {
+		return d1.DivRound(d2, precision), nil
+	}
+	return d1.Div(d2), nil
+}
+
 // BcCmp compares two Decimals.
 func BcCmp(d1, d2 decimal.Decimal) decimal.Decimal {
 	if d1.GreaterThanOrEqual(d2) {
@@ -60,4 +72,12 @@ func BcEqual(d1, d2 decimal.Decimal) bool {
 // BcZero decimal.Zero
 func BcZero() decimal.Decimal {
 	return decimal.Zero
+}
+
+// BcRoundUp decimal.Round
+func BcRoundUp(d decimal.Decimal, precision int32) decimal.Decimal {
+	if precision == 0 {
+		precision = 2
+	}
+	return d.Round(precision)
 }
