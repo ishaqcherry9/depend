@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/ishaqcherry9/depend/pkg/encoding"
@@ -52,6 +53,8 @@ type RedisOriginCmds interface {
 	NewDropIndexBuilder(ctx context.Context, index string) *redis.DropIndexBuilder
 	RedisClient(ctx context.Context) *redis.Client
 	Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd
+	WithDB(ctx context.Context, originalDb, currentDb int, fn func(ctx context.Context, client *redis.Client) error) error
+	SelectDB(ctx context.Context, db int) error
 }
 
 type RedisOriginCmdCache struct {
@@ -443,4 +446,29 @@ func (c *RedisOriginCmdCache) Eval(ctx context.Context, script string, keys []st
 		return c.client.Eval(ctx, script, nil, args...)
 	}
 	return c.client.Eval(ctx, script, keys, args...)
+}
+
+// WithDB 更好的方式是为每个数据库创建一个单独的 redis.Client 实例，而不是尝试在运行时切换数据库。 这种方法更清晰、更安全，并且避免了潜在的并发问题
+// 这里更运维也沟通了, 临时这样实现处理, 后续单个的redis, 初始化的时候直接指定索引, 无需程序运行时切换
+func (c *RedisOriginCmdCache) WithDB(ctx context.Context, originalDb, currentDb int, fn func(ctx context.Context, client *redis.Client) error) error {
+	// 1. 选择新的数据库
+	if err := c.SelectDB(ctx, currentDb); err != nil {
+		return fmt.Errorf("failed to select DB %d: %w", currentDb, err)
+	}
+
+	// 2. 执行回调函数
+	if err := fn(ctx, c.client); err != nil {
+		return err
+	}
+
+	// 3. 恢复原始数据库
+	if err := c.SelectDB(ctx, originalDb); err != nil {
+		return fmt.Errorf("failed to restore DB %d: %w", originalDb, err)
+	}
+
+	return nil
+}
+
+func (c *RedisOriginCmdCache) SelectDB(ctx context.Context, db int) error {
+	return c.client.Do(ctx, "SELECT", db).Err()
 }

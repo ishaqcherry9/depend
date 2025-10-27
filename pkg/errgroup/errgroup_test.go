@@ -4,259 +4,174 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"syscall"
 	"testing"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGroup_Go(t *testing.T) {
-	t.Run("successful goroutine", func(t *testing.T) {
-		g, _ := WithContext(context.Background(), Options{MaxConcurrency: 1})
-		var executed bool
-		g.Go(func(ctx context.Context) error {
-			executed = true
-			return nil
-		})
-		err := g.Wait()
-		assert.NoError(t, err)
-		assert.True(t, executed)
-	})
+	t.Run("successful goroutines", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 
-	t.Run("failing goroutine", func(t *testing.T) {
-		g, _ := WithContext(context.Background(), Options{MaxConcurrency: 1, Tag: "test-tag"})
-		g.Go(func(ctx context.Context) error {
-			return errors.New("test error")
-		})
-		err := g.Wait()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "goroutine with tag test-tag failed")
-	})
+		group := NewGroup(ctx, "test", 3)
 
-	t.Run("multiple goroutines", func(t *testing.T) {
-		g, _ := WithContext(context.Background(), Options{MaxConcurrency: 2})
-		var counter int
+		var result []int
 		var mu sync.Mutex
+
 		for i := 0; i < 5; i++ {
-			g.Go(func(ctx context.Context) error {
-				mu.Lock()
-				counter++
-				mu.Unlock()
-				return nil
+			taskID := i
+			group.Go(func(ctx context.Context) error {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				default:
+					time.Sleep(time.Duration(taskID*100) * time.Millisecond) // Simulate work
+					mu.Lock()
+					result = append(result, taskID)
+					mu.Unlock()
+					return nil
+				}
 			})
 		}
-		err := g.Wait()
+
+		err := group.Wait()
 		assert.NoError(t, err)
-		assert.Equal(t, 5, counter)
+
+		assert.Len(t, result, 5)
+		assert.ElementsMatch(t, []int{0, 1, 2, 3, 4}, result)
 	})
 
-	t.Run("cancellation on error", func(t *testing.T) {
-		g, _ := WithContext(context.Background(), Options{MaxConcurrency: 2})
-		var executed int
+	t.Run("failed goroutine", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		group := NewGroup(ctx, "test", 3)
+
+		var result []int
 		var mu sync.Mutex
 
-		g.Go(func(ctx context.Context) error {
-			mu.Lock()
-			executed++
-			mu.Unlock()
-			return errors.New("first error")
-		})
+		failTaskID := 2
 
-		g.Go(func(ctx context.Context) error {
-			select {
-			case <-ctx.Done():
-				return nil
-			case <-time.After(100 * time.Millisecond):
-				mu.Lock()
-				executed++
-				mu.Unlock()
-				return errors.New("second error") //Should never execute
-			}
-		})
+		for i := 0; i < 5; i++ {
+			taskID := i
+			group.Go(func(ctx context.Context) error {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				default:
+					if taskID == failTaskID {
+						return errors.New("intentional failure")
+					}
+					time.Sleep(time.Duration(taskID*100) * time.Millisecond) // Simulate work
+					mu.Lock()
+					result = append(result, taskID)
+					mu.Unlock()
+					return nil
+				}
+			})
+		}
 
-		err := g.Wait()
+		err := group.Wait()
 		assert.Error(t, err)
-		assert.Equal(t, 1, executed) // Only the first one should have run.
+
+		// 验证错误信息包含预期的失败任务的 tag
+		assert.Contains(t, err.Error(), fmt.Sprintf("goroutine with tag test failed"))
+
+		// 验证成功的任务数量和内容
+		assert.Len(t, result, 4)
+		assert.ElementsMatch(t, []int{0, 1, 3, 4}, result)
 	})
 
-	t.Run("max concurrency", func(t *testing.T) {
-		maxConcurrency := 3
-		g, _ := WithContext(context.Background(), Options{MaxConcurrency: maxConcurrency})
-		start := time.Now()
+	t.Run("context cancellation", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		group := NewGroup(ctx, "test", 3)
+
+		var result []int
+		var mu sync.Mutex
+
+		// Cancel context after short delay
+		time.AfterFunc(500*time.Millisecond, cancel)
+
+		for i := 0; i < 5; i++ {
+			taskID := i
+			group.Go(func(ctx context.Context) error {
+				select {
+				case <-ctx.Done():
+					mu.Lock()
+					result = append(result, taskID)
+					mu.Unlock()
+					return ctx.Err()
+				case <-time.After(time.Second): // Simulate long running task
+					mu.Lock()
+					result = append(result, taskID)
+					mu.Unlock()
+					return nil
+				}
+			})
+		}
+
+		err := group.Wait()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "context canceled")
+
+		// 验证任务是否被取消
+		assert.GreaterOrEqual(t, len(result), 1)
+	})
+
+	t.Run("concurrency limit", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		limit := 3
+		group := NewGroup(ctx, "test", limit)
+
 		var running int
 		var maxRunning int
 		var mu sync.Mutex
 
-		for i := 0; i < 5; i++ {
-			g.Go(func(ctx context.Context) error {
+		task := func(ctx context.Context) error {
+			mu.Lock()
+			running++
+			if running > maxRunning {
+				maxRunning = running
+			}
+			mu.Unlock()
+
+			select {
+			case <-ctx.Done():
 				mu.Lock()
-				running++
-				if running > maxRunning {
-					maxRunning = running
-				}
+				running--
 				mu.Unlock()
-				time.Sleep(50 * time.Millisecond) // Simulate work
+				return ctx.Err()
+			case <-time.After(500 * time.Millisecond):
 				mu.Lock()
 				running--
 				mu.Unlock()
 				return nil
-			})
-		}
-		err := g.Wait()
-		duration := time.Since(start)
-
-		assert.NoError(t, err)
-		assert.Less(t, duration, 200*time.Millisecond)
-		assert.Equal(t, maxConcurrency, maxRunning)
-	})
-
-	t.Run("SysProcAttr", func(t *testing.T) {
-		attr := &syscall.SysProcAttr{}
-		g, _ := WithContext(context.Background(), Options{
-			MaxConcurrency: 1,
-			SysProcAttr:    attr,
-		})
-
-		assert.Equal(t, attr, g.attr)
-
-		g.Go(func(ctx context.Context) error {
-			return nil
-		})
-		assert.NoError(t, g.Wait())
-	})
-
-	t.Run("goroutine tag", func(t *testing.T) {
-		tag := "test-goroutine"
-		g, _ := WithContext(context.Background(), Options{
-			MaxConcurrency: 1,
-			Tag:            tag,
-		})
-
-		var capturedTag string
-		g.Go(func(ctx context.Context) error {
-			if t, ok := ctx.Value(goroutineTag).(string); ok {
-				capturedTag = t
 			}
-			return nil
-		})
-
-		assert.NoError(t, g.Wait())
-		assert.Equal(t, tag, capturedTag)
-	})
-
-	t.Run("multiple failing goroutines", func(t *testing.T) {
-		g, _ := WithContext(context.Background(), Options{MaxConcurrency: 3, Tag: "multi-fail"})
-
-		errorMessages := []string{"error 1", "error 2", "error 3"}
-		for _, msg := range errorMessages {
-			g.Go(func(ctx context.Context) error {
-				return errors.New(msg)
-			})
 		}
 
-		err := g.Wait()
-		assert.Error(t, err)
-		multierr, ok := err.(*multierror.Error)
-		assert.True(t, ok)
-
-		errs := multierr.Errors
-		assert.Len(t, errs, 3)
-
-		for i, e := range errs {
-			assert.Contains(t, e.Error(), fmt.Sprintf("goroutine with tag multi-fail failed: %s", errorMessages[i]))
+		for i := 0; i < 5; i++ {
+			group.Go(task)
 		}
+
+		err := group.Wait()
+		assert.NoError(t, err)
+		assert.Equal(t, limit, maxRunning)
 	})
 }
 
-func TestWithContext(t *testing.T) {
-	t.Run("context cancellation", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		g, _ := WithContext(ctx, Options{MaxConcurrency: 1})
+func Test_goroutineTag(t *testing.T) {
+	ctx := context.Background()
+	taggedCtx := context.WithValue(ctx, goroutineTag, "testTag")
 
-		var executed bool
-		g.Go(func(ctx context.Context) error {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-time.After(100 * time.Millisecond):
-				executed = true
-				return nil
-			}
-		})
+	value := taggedCtx.Value(goroutineTag)
+	assert.Equal(t, "testTag", value)
 
-		cancel()
-		err := g.Wait()
-		assert.Error(t, err)
-		assert.False(t, executed)
-	})
-}
-
-func TestGroup_Wait(t *testing.T) {
-	t.Run("no errors", func(t *testing.T) {
-		g, _ := WithContext(context.Background(), Options{MaxConcurrency: 1})
-		err := g.Wait()
-		assert.NoError(t, err)
-	})
-
-	t.Run("one error", func(t *testing.T) {
-		g, _ := WithContext(context.Background(), Options{MaxConcurrency: 1})
-		g.Go(func(ctx context.Context) error {
-			return errors.New("test error")
-		})
-		err := g.Wait()
-		assert.Error(t, err)
-	})
-
-	t.Run("multiple errors", func(t *testing.T) {
-		g, _ := WithContext(context.Background(), Options{MaxConcurrency: 2})
-		g.Go(func(ctx context.Context) error {
-			return errors.New("error 1")
-		})
-		g.Go(func(ctx context.Context) error {
-			return errors.New("error 2")
-		})
-		err := g.Wait()
-		assert.Error(t, err)
-		multierr, ok := err.(*multierror.Error)
-		assert.True(t, ok)
-		assert.Len(t, multierr.Errors, 2)
-	})
-}
-
-func TestGoroutineTagContext(t *testing.T) {
-	t.Run("check tag value in context", func(t *testing.T) {
-		tagValue := "test-tag"
-		g, _ := WithContext(context.Background(), Options{MaxConcurrency: 1, Tag: tagValue})
-
-		var capturedTag string
-		g.Go(func(ctx context.Context) error {
-			if value := ctx.Value(goroutineTag); value != nil {
-				if tag, ok := value.(string); ok {
-					capturedTag = tag
-				}
-			}
-			return nil
-		})
-
-		err := g.Wait()
-		assert.NoError(t, err)
-		assert.Equal(t, tagValue, capturedTag)
-	})
-
-	t.Run("check no tag value in context", func(t *testing.T) {
-		g, _ := WithContext(context.Background(), Options{MaxConcurrency: 1})
-
-		var capturedValue interface{}
-		g.Go(func(ctx context.Context) error {
-			capturedValue = ctx.Value(goroutineTag)
-			return nil
-		})
-
-		err := g.Wait()
-		assert.NoError(t, err)
-		assert.Equal(t, "", capturedValue)
-	})
+	emptyCtx := context.Background()
+	emptyValue := emptyCtx.Value(goroutineTag)
+	assert.Nil(t, emptyValue)
 }

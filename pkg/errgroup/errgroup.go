@@ -24,31 +24,18 @@ type Group struct {
 	errMu  sync.Mutex           // 保护 result 的互斥锁
 	result *multierror.Error    // 收集所有错误的 multierror 对象
 	ctx    context.Context      // 用于控制所有 Goroutine 的生命周期
-	cancel context.CancelFunc   // 取消函数
 	wg     sync.WaitGroup       // 等待所有 Goroutine 完成
 	attr   *syscall.SysProcAttr // 子进程的内核参数
 	tag    string               // 协程标签
 }
 
-// Options 用于配置 Group 的选项
-type Options struct {
-	MaxConcurrency int                  // 最大并发数
-	SysProcAttr    *syscall.SysProcAttr // 子进程的内核参数
-	Tag            string               // 协程标签
-}
-
-// WithContext 创建一个带有上下文和选项的 Group。
-func WithContext(ctx context.Context, options Options) (*Group, context.Context) {
-	ctx, cancel := context.WithCancel(ctx)
-	g := &Group{
-		sem:    make(chan struct{}, options.MaxConcurrency),
+func NewGroup(ctx context.Context, tag string, limit int) *Group {
+	return &Group{
+		sem:    make(chan struct{}, limit),
 		ctx:    ctx,
-		cancel: cancel,
 		result: new(multierror.Error),
-		attr:   options.SysProcAttr,
-		tag:    options.Tag,
+		tag:    tag,
 	}
-	return g, ctx
 }
 
 // Go 启动一个新的 Goroutine，并限制并发数。
@@ -61,22 +48,23 @@ func (g *Group) Go(f GoFunc) {
 			g.wg.Done() // 标记 Goroutine 完成
 		}()
 
+		// 为每个 Goroutine 创建独立的 context
+		ctx, cancel := context.WithCancel(g.ctx) // 基于父context创建子context
+		defer cancel()                           // 确保 Goroutine 退出时取消 context
+
 		// 创建带有标签的 context
-		taggedCtx := context.WithValue(g.ctx, goroutineTag, g.tag)
+		taggedCtx := context.WithValue(ctx, goroutineTag, g.tag) // 使用新创建的 Context
 
 		// 使用传入的 context 执行任务
 		if err := f(taggedCtx); err != nil {
 			g.errMu.Lock()
 			g.result = multierror.Append(g.result, errors.Wrap(err, fmt.Sprintf("goroutine with tag %s failed", g.tag))) // 收集错误,添加上下文
 			g.errMu.Unlock()
-			g.cancel() // 发生错误时取消所有 Goroutine
 		}
 	}()
 }
 
-// Wait 等待所有 Goroutine 完成，并返回所有错误。
 func (g *Group) Wait() error {
-	g.wg.Wait()                  // 等待所有 Goroutine 完成
-	g.cancel()                   // 确保所有 Goroutine 都被取消
-	return g.result.ErrorOrNil() // 返回所有错误
+	g.wg.Wait()
+	return g.result.ErrorOrNil()
 }
