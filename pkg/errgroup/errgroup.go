@@ -46,6 +46,13 @@ func (g *Group) Go(f GoFunc) {
 		defer func() {
 			<-g.sem     // 释放信号量
 			g.wg.Done() // 标记 Goroutine 完成
+			if r := recover(); r != nil {
+				// 捕获 panic
+				err := fmt.Errorf("goroutine panicked: %v", r)
+				g.errMu.Lock()
+				g.result = multierror.Append(g.result, errors.Wrap(err, fmt.Sprintf("goroutine with tag %s panicked", g.tag))) // 收集错误,添加上下文
+				g.errMu.Unlock()
+			}
 		}()
 
 		// 为每个 Goroutine 创建独立的 context
