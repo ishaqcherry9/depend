@@ -55,6 +55,7 @@ type RedisOriginCmds interface {
 	Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd
 	WithDB(ctx context.Context, originalDb, currentDb int, fn func(ctx context.Context, client *redis.Client) error) error
 	SelectDB(ctx context.Context, db int) error
+	HGetAll(ctx context.Context, key string) *redis.MapStringStringCmd
 }
 
 type RedisOriginCmdCache struct {
@@ -471,4 +472,8 @@ func (c *RedisOriginCmdCache) WithDB(ctx context.Context, originalDb, currentDb 
 
 func (c *RedisOriginCmdCache) SelectDB(ctx context.Context, db int) error {
 	return c.client.Do(ctx, "SELECT", db).Err()
+}
+
+func (c *RedisOriginCmdCache) HGetAll(ctx context.Context, key string) *redis.MapStringStringCmd {
+	return c.client.HGetAll(ctx, key)
 }
