@@ -47,9 +47,8 @@ var (
 )
 
 const (
-	defaultTimeUnit        = 1e7 // nsec, i.e. 10 msec
-	defaultClusterTimeUnit = 2e7
-
+	defaultTimeUnit           = 1e7 // nsec, i.e. 10 msec
+	defaultClusterTimeUnit    = 2e7
 	defaultBitsTime           = 39
 	defaultBitsSequence       = 8
 	defaultBitsMachine        = 16
@@ -65,8 +64,12 @@ var defaultInterfaceAddrs = net.InterfaceAddrs
 
 type InterfaceAddrs func() ([]net.Addr, error)
 
-func NewDefault() (*AstraID, error) {
-	return New(Settings{})
+func MustNew() *AstraID {
+	id, err := New(Settings{})
+	if err != nil {
+		panic("astraId: failed to create instance: " + err.Error())
+	}
+	return id
 }
 
 func New(st Settings) (*AstraID, error) {
