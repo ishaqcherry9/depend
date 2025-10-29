@@ -121,7 +121,6 @@ func LoadWithWatch(nacosConfigFilePath string, target interface{}, callback func
 
 	// 7. 启动配置监听.有回调函数时，使用回调函数,没有回调函数时,使用默认更新全局配置对象
 	defaultOnChange := func(namespace, group, dataId, data string) {
-		logger.Info(context.Background(), "Configuration changed, updating global config", zap.String("namespace", namespace), zap.String("group", group), zap.String("dataId", dataId), zap.String("data", data))
 		// 解析新配置并更新目标对象 - 使用自动格式检测
 		err = conf.ParseConfigData([]byte(config), "yaml", target)
 		// err := conf.ParseConfigDataWithAutoDetection([]byte(data), target)
@@ -129,6 +128,7 @@ func LoadWithWatch(nacosConfigFilePath string, target interface{}, callback func
 			logger.Error(context.Background(), "Failed to parse new config data", zap.Error(err))
 			return
 		}
+		logger.Info(context.Background(), "Configuration changed, updating global config", zap.String("namespace", namespace), zap.String("group", group), zap.String("dataId", dataId), zap.String("data", data))
 	}
 	if callback == nil {
 		callback = defaultOnChange
