@@ -128,7 +128,7 @@ func LoadWithWatch(nacosConfigFilePath string, target interface{}, callback func
 			logger.Error(context.Background(), "Failed to parse new config data", zap.Error(err))
 			return
 		}
-		logger.Info(context.Background(), "Configuration changed, updating global config", zap.String("namespace", namespace), zap.String("group", group), zap.String("dataId", dataId), zap.String("data", data))
+		logger.Info(context.Background(), "Configuration changed, updating global config", zap.String("namespace", namespace), zap.String("group", group), zap.String("dataId", dataId), zap.Any("target", target))
 	}
 	if callback == nil {
 		callback = defaultOnChange
