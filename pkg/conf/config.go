@@ -17,6 +17,8 @@ type AppConfig struct {
 	Encrypt               bool                   `yaml:"encrypt" json:"encrypt"`
 	TopicName             string                 `yaml:"topicName" json:"topicName"`
 	RegistryDiscoveryType string                 `yaml:"registryDiscoveryType" json:"registryDiscoveryType"`
+	RegType               int                    `yaml:"regType" json:"regType"`
+	HciValidate           int                    `yaml:"hciValidate" json:"hciValidate"`
 	Extend                map[string]interface{} `yaml:"extend" json:"extend"`
 }
 
