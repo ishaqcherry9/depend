@@ -1,4 +1,4 @@
-//运行 VERSION=v1.4.11 go run version.go
+// 运行 VERSION=v1.4.11 go run changelog.go
 
 package main
 
@@ -67,4 +67,3 @@ func main() {
 
 	fmt.Println("✅ Changelog updated:", version)
 }
-
