@@ -1,3 +1,5 @@
+//运行 VERSION=v1.4.11 go run version.go
+
 package main
 
 import (
