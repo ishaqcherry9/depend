@@ -11,10 +11,7 @@ import (
 )
 
 type RedisLock struct {
-	rs     *redsync.Redsync // redsync 实例
-	mutex  *redsync.Mutex   // redsync 锁
-	key    string           // 锁的 key
-	closed int32            // 0: open, 1: closed
+	mutex *redsync.Mutex
 }
 
 func NewRedisLock(client *redis.Client, key string, options ...redsync.Option) (Locker, error) {
@@ -54,8 +51,6 @@ func newLocker(delegate redis.UniversalClient, key string, options ...redsync.Op
 
 	return &RedisLock{
 		mutex: mutex,
-		rs:    rs,
-		key:   key,
 	}
 }
 
