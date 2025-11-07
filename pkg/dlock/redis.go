@@ -37,6 +37,16 @@ func NewRedisClusterLock(clusterClient *redis.ClusterClient, key string, options
 	return newLocker(clusterClient, key, options...), nil
 }
 
+func NewRedisUniversalLock(client redis.UniversalClient, key string, options ...redsync.Option) (Locker, error) {
+	if client == nil {
+		return nil, errors.New("universal redis client is nil")
+	}
+	if key == "" {
+		return nil, errors.New("key is empty")
+	}
+	return newLocker(client, key, options...), nil
+}
+
 func newLocker(delegate redis.UniversalClient, key string, options ...redsync.Option) Locker {
 	pool := goredis.NewPool(delegate)
 	rs := redsync.New(pool)
