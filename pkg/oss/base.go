@@ -42,10 +42,12 @@ type UploadRequest struct {
 
 type UploadResponse struct {
 	Location   string `json:"location"`
-	Thumbnail  string `json:"thumbnail"`
+	Thumbnail  string `json:"-"`
+	ThumbURL   string `json:"thumb_url"`
 	Height     int    `json:"height"`
 	Width      int    `json:"width"`
-	VideoCover string `json:"video_cover"`
+	VideoCover string `json:"-"`
+	VideoURL   string `json:"video_url"`
 	Duration   int64  `json:"duration"`
 	Size       int64  `json:"size"`
 }
@@ -198,22 +200,32 @@ func (s *Storage) ImageExecute(ctx context.Context, info UploadRequest, result *
 
 func (s *Storage) VideoExecute(ctx context.Context, info UploadRequest, result *UploadResponse) error {
 	result.Duration = s.GetDuration(info)
-
 	coverFileName := info.FileName + "-cover.jpg"
-	timeSec := 5
 
-	err := ffmpeg.Input(info.FileName, ffmpeg.KwArgs{"ss": timeSec}).Output(coverFileName, ffmpeg.KwArgs{
-		"vframes": 1,
-		"q:v":     2,
-	}).Run()
+	err := ffmpeg.Input(info.FileName, ffmpeg.KwArgs{"ss": (result.Duration - 2)}).
+		Output(coverFileName, ffmpeg.KwArgs{
+			"vframes": 1,
+			"q:v":     2,
+		}).OverWriteOutput().Run()
+
+	/*
+		//选择多帧
+		fps := fmt.Sprintf("fps=%d/%d", 1, 30)
+		err := ffmpeg.
+			Input(info.FileName).
+			Filter("fps", ffmpeg.Args{fps}).
+			Output(coverFileName, ffmpeg.KwArgs{
+				"q:v": 2, // 高画质
+			}).
+			OverWriteOutput().Run()
+	*/
 
 	if err != nil {
-		logger.Errorf(s.Context, "ffmpeg.Input err %v", err)
+		logger.Errorf(ctx, "ffmpeg.Input err %v", err)
 		return err
 	}
 
 	result.VideoCover = coverFileName
-
 	return nil
 }
 
@@ -286,7 +298,6 @@ func (s *Storage) AwsUploadALL(ctx context.Context, info UploadRequest, result *
 	var err error
 	date := time.Now().Format("20060102")
 	uploadKey := filepath.Join(s.SiteID, info.BussType, date, info.UniqID)
-
 	result.Location, err = s.AwsUploadOne(ctx, info.FileName, uploadKey, info.FileType)
 	if err != nil {
 		logger.Errorf(ctx, "aws upload info.FileName %s  err: %v", info.FileName, err)
@@ -295,7 +306,7 @@ func (s *Storage) AwsUploadALL(ctx context.Context, info UploadRequest, result *
 
 	if result.Thumbnail != "" {
 		uploadKey = filepath.Join(s.SiteID, info.BussType, date, info.UniqID+"-thumb")
-		result.Thumbnail, err = s.AwsUploadOne(ctx, result.Thumbnail, uploadKey, info.FileType)
+		result.ThumbURL, err = s.AwsUploadOne(ctx, result.Thumbnail, uploadKey, info.FileType)
 		if err != nil {
 			logger.Errorf(ctx, "aws upload Thumbnail %s  err: %v", result.Thumbnail, err)
 			return err
@@ -304,7 +315,7 @@ func (s *Storage) AwsUploadALL(ctx context.Context, info UploadRequest, result *
 
 	if result.VideoCover != "" {
 		uploadKey = filepath.Join(s.SiteID, info.BussType, date, info.UniqID+"-cover")
-		result.VideoCover, err = s.AwsUploadOne(ctx, result.VideoCover, uploadKey, info.FileType)
+		result.VideoURL, err = s.AwsUploadOne(ctx, result.VideoCover, uploadKey, "image/jpeg")
 		if err != nil {
 			logger.Errorf(ctx, "aws upload VideoCover %s  err: %v", result.VideoCover, err)
 			return err
@@ -400,16 +411,16 @@ func (s *Storage) UploadExtra(ctx context.Context, r *http.Request, info UploadR
 		return result, err
 	}
 
-	fileNames := []string{info.FileName, result.Thumbnail, result.VideoCover}
-	defer s.DeleteTmpFile(ctx, fileNames)
-
+	//先只检测
 	s.CheckFileType(ctx, info)
 
+	defer s.DeleteTmpFile(ctx, []string{info.FileName})
 	if err := s.Execute(ctx, info, &result); err != nil {
 		logger.Errorf(ctx, "Execute err: %v", err)
 		return result, err
 	}
 
+	defer s.DeleteTmpFile(ctx, []string{result.Thumbnail, result.VideoCover})
 	if err := s.Finish(ctx, info, &result); err != nil {
 		logger.Errorf(ctx, "Finish err: %v", err)
 		return result, err
@@ -418,7 +429,7 @@ func (s *Storage) UploadExtra(ctx context.Context, r *http.Request, info UploadR
 	return result, nil
 }
 
-// 类型判断
+// 类型判断，暂不返回
 func (s *Storage) CheckFileType(ctx context.Context, info UploadRequest) bool {
 	logger.Infof(ctx, "Check file type UploadTypeID %d Detect %s", info.UploadType, info.FileType)
 
@@ -450,7 +461,8 @@ func (s *Storage) MinioUploadALL(ctx context.Context, info UploadRequest, result
 
 	if result.Thumbnail != "" {
 		uploadKey = filepath.Join(s.SiteID, info.BussType, date, info.UniqID+"-thumb")
-		_, err = s.MinioUploadOne(ctx, result.Thumbnail, uploadKey, info.FileType, 0)
+		fileInfo, _ := os.Stat(result.Thumbnail)
+		_, err = s.MinioUploadOne(ctx, result.Thumbnail, uploadKey, info.FileType, fileInfo.Size())
 		if err != nil {
 			logger.Errorf(ctx, "MinioUpload Thumbnail err: %v", err)
 			return err
@@ -459,7 +471,9 @@ func (s *Storage) MinioUploadALL(ctx context.Context, info UploadRequest, result
 
 	if result.VideoCover != "" {
 		uploadKey = filepath.Join(s.SiteID, info.BussType, date, info.UniqID+"-cover")
-		_, err = s.MinioUploadOne(ctx, result.VideoCover, uploadKey, info.FileType, 0)
+		//fileType必须是图片格式，默认是视频格式。
+		fileInfo, _ := os.Stat(result.VideoCover)
+		_, err = s.MinioUploadOne(ctx, result.VideoCover, uploadKey, "image/jpeg", fileInfo.Size())
 		if err != nil {
 			logger.Errorf(ctx, "MinioUpload Thumbnail err: %v", err)
 			return err

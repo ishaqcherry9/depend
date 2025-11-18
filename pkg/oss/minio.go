@@ -52,14 +52,9 @@ func NewMinioClient(ctx context.Context, conf OssConf) (*minio.Client, error) {
 }
 
 func (s *Storage) MinioUpload(ctx context.Context, reader io.Reader, uploadKey, fileType string, size int64) (string, error) {
-	var num uint
-	if size > 0 {
-		num = uint(size/partSize) + 1
-		if num > 20 {
-			num = 20
-		}
-	} else {
-		num = 1
+	num := uint(size/(partSize)) + 1
+	if num > 20 {
+		num = 20
 	}
 
 	opts := minio.PutObjectOptions{
@@ -68,7 +63,6 @@ func (s *Storage) MinioUpload(ctx context.Context, reader io.Reader, uploadKey, 
 		PartSize:              partSize,
 		ConcurrentStreamParts: true,
 	}
-
 	info, err := s.Minio.PutObject(ctx, s.MinioBucket, uploadKey, reader, -1, opts)
 	if err != nil {
 		logger.Errorf(ctx, "minio upload err: %v", err)
