@@ -5,14 +5,10 @@ import (
 	"fmt"
 )
 
-type messageService struct {
-	client *client
-}
-
 // SendMsg 发送消息
-func (s *messageService) SendMsg(ctx context.Context, req *MessageInfo) error {
+func (s *client) SendMsg(ctx context.Context, req *MessageInfo) error {
 	var resp StandardResponse
-	if err := s.client.request(ctx, "POST", "/api/v1/im/msg/sendMsg", req, &resp); err != nil {
+	if err := s.request(ctx, "POST", "/api/v1/im/msg/sendMsg", req, &resp); err != nil {
 		return fmt.Errorf("send message failed: %w", err)
 	}
 
@@ -24,9 +20,9 @@ func (s *messageService) SendMsg(ctx context.Context, req *MessageInfo) error {
 }
 
 // BroadcastMsg 发送广播消息
-func (s *messageService) BroadcastMsg(ctx context.Context, req *BroadcastMessageInfo) (*BroadcastNotificationResp, error) {
+func (s *client) BroadcastMsg(ctx context.Context, req *BroadcastMessageInfo) (*BroadcastNotificationResp, error) {
 	var resp StandardResponse
-	if err := s.client.request(ctx, "POST", "/api/v1/im/msg/broadcast_notification", req, &resp); err != nil {
+	if err := s.request(ctx, "POST", "/api/v1/im/msg/broadcast_notification", req, &resp); err != nil {
 		return nil, fmt.Errorf("broadcast message failed: %w", err)
 	}
 
@@ -41,4 +37,3 @@ func (s *messageService) BroadcastMsg(ctx context.Context, req *BroadcastMessage
 
 	return &broadcastResp, nil
 }
-

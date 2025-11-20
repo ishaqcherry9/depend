@@ -5,14 +5,10 @@ import (
 	"fmt"
 )
 
-type metaService struct {
-	client *client
-}
-
 // GetProviderStatus 获取当前IM渠道状态
-func (s *metaService) GetProviderStatus(ctx context.Context) (*ProviderStatusResp, error) {
+func (s *client) GetProviderStatus(ctx context.Context) (*ProviderStatusResp, error) {
 	var resp StandardResponse
-	if err := s.client.request(ctx, "GET", "/api/v1/im/meta/providerStatus", nil, &resp); err != nil {
+	if err := s.request(ctx, "GET", "/api/v1/im/meta/providerStatus", nil, &resp); err != nil {
 		return nil, fmt.Errorf("get provider status failed: %w", err)
 	}
 
@@ -30,4 +26,3 @@ func (s *metaService) GetProviderStatus(ctx context.Context) (*ProviderStatusRes
 
 	return &statusResp, nil
 }
-

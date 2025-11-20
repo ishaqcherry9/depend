@@ -5,14 +5,10 @@ import (
 	"fmt"
 )
 
-type userService struct {
-	client *client
-}
-
 // Register 用户注册
-func (s *userService) Register(ctx context.Context, req *RegisterReq) (*TokenResp, error) {
+func (s *client) Register(ctx context.Context, req *RegisterReq) (*TokenResp, error) {
 	var resp StandardResponse
-	if err := s.client.request(ctx, "POST", "/api/v1/im/user/register", req, &resp); err != nil {
+	if err := s.request(ctx, "POST", "/api/v1/im/user/register", req, &resp); err != nil {
 		return nil, fmt.Errorf("register user failed: %w", err)
 	}
 
@@ -29,9 +25,9 @@ func (s *userService) Register(ctx context.Context, req *RegisterReq) (*TokenRes
 }
 
 // Disable 禁用用户
-func (s *userService) Disable(ctx context.Context, req *UIDReq) error {
+func (s *client) DisableUser(ctx context.Context, req *UIDReq) error {
 	var resp StandardResponse
-	if err := s.client.request(ctx, "POST", "/api/v1/im/user/disable", req, &resp); err != nil {
+	if err := s.request(ctx, "POST", "/api/v1/im/user/disable", req, &resp); err != nil {
 		return fmt.Errorf("disable user failed: %w", err)
 	}
 
@@ -43,9 +39,9 @@ func (s *userService) Disable(ctx context.Context, req *UIDReq) error {
 }
 
 // Enable 启用用户
-func (s *userService) Enable(ctx context.Context, req *UIDReq) error {
+func (s *client) EnableUser(ctx context.Context, req *UIDReq) error {
 	var resp StandardResponse
-	if err := s.client.request(ctx, "POST", "/api/v1/im/user/enable", req, &resp); err != nil {
+	if err := s.request(ctx, "POST", "/api/v1/im/user/enable", req, &resp); err != nil {
 		return fmt.Errorf("enable user failed: %w", err)
 	}
 
@@ -57,9 +53,9 @@ func (s *userService) Enable(ctx context.Context, req *UIDReq) error {
 }
 
 // RefreshToken 刷新用户Token
-func (s *userService) RefreshToken(ctx context.Context, req *RefreshReq) (*TokenResp, error) {
+func (s *client) RefreshToken(ctx context.Context, req *RefreshReq) (*TokenResp, error) {
 	var resp StandardResponse
-	if err := s.client.request(ctx, "POST", "/api/v1/im/user/refreshToken", req, &resp); err != nil {
+	if err := s.request(ctx, "POST", "/api/v1/im/user/refreshToken", req, &resp); err != nil {
 		return nil, fmt.Errorf("refresh token failed: %w", err)
 	}
 
@@ -74,4 +70,3 @@ func (s *userService) RefreshToken(ctx context.Context, req *RefreshReq) (*Token
 
 	return &tokenResp, nil
 }
-

@@ -61,32 +61,12 @@ func ExampleGetClient() {
 	fmt.Printf("Token: %s\n", tokenResp.Tokens)
 }
 
-func ExampleNewClient() {
-	// 创建独立的客户端实例
-	client := improxy.NewClient(
-		improxy.WithBaseURL("http://localhost:8080"),
-		improxy.WithTimeout(30*time.Second),
-	)
-
-	ctx := context.Background()
-
-	// 使用客户端（简化后的 API）
-	tokenResp, err := client.Register(ctx, &improxy.RegisterReq{
-		UID:    "user123",
-		Name:   "张三",
-		Avatar: "https://example.com/avatar.jpg",
-	})
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
-	fmt.Printf("Token: %s\n", tokenResp.Tokens)
-}
-
 func ExampleUserService() {
-	client := improxy.NewClient(
+	// 初始化客户端
+	improxy.Init(
 		improxy.WithBaseURL("http://localhost:8080"),
 	)
+	client := improxy.GetClient()
 
 	ctx := context.Background()
 
@@ -105,9 +85,11 @@ func ExampleUserService() {
 }
 
 func ExampleTeamService() {
-	client := improxy.NewClient(
+	// 初始化客户端
+	improxy.Init(
 		improxy.WithBaseURL("http://localhost:8080"),
 	)
+	client := improxy.GetClient()
 
 	ctx := context.Background()
 
@@ -136,9 +118,11 @@ func ExampleTeamService() {
 }
 
 func ExampleMessageService() {
-	client := improxy.NewClient(
+	// 初始化客户端
+	improxy.Init(
 		improxy.WithBaseURL("http://localhost:8080"),
 	)
+	client := improxy.GetClient()
 
 	ctx := context.Background()
 
@@ -158,25 +142,12 @@ func ExampleMessageService() {
 	fmt.Println("Message sent successfully")
 }
 
-func ExampleAuthService() {
-	client := improxy.NewClient(
-		improxy.WithBaseURL("http://localhost:8080"),
-	)
-
-	ctx := context.Background()
-
-	// 登录
-	loginResp, _ := client.Login(ctx, &improxy.LoginRequest{
-		Username: "admin",
-		Password: "123456",
-	})
-	fmt.Printf("Token: %s\n", loginResp.Data.Token)
-}
-
 func ExampleMetaService() {
-	client := improxy.NewClient(
+	// 初始化客户端
+	improxy.Init(
 		improxy.WithBaseURL("http://localhost:8080"),
 	)
+	client := improxy.GetClient()
 
 	ctx := context.Background()
 

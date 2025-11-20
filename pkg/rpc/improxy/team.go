@@ -5,14 +5,10 @@ import (
 	"fmt"
 )
 
-type teamService struct {
-	client *client
-}
-
 // CreateTeam 创建群组
-func (s *teamService) CreateTeam(ctx context.Context, req *CreateTeamReq) (*TeamInfoRsp, error) {
+func (s *client) CreateTeam(ctx context.Context, req *CreateTeamReq) (*TeamInfoRsp, error) {
 	var resp StandardResponse
-	if err := s.client.request(ctx, "POST", "/api/v1/im/team/create", req, &resp); err != nil {
+	if err := s.request(ctx, "POST", "/api/v1/im/team/create", req, &resp); err != nil {
 		return nil, fmt.Errorf("create team failed: %w", err)
 	}
 
@@ -29,14 +25,14 @@ func (s *teamService) CreateTeam(ctx context.Context, req *CreateTeamReq) (*Team
 }
 
 // QueryTeam 批量查询群组信息列表
-func (s *teamService) QueryTeam(ctx context.Context, req *QueryTeamReq) (*ListTeamsData, error) {
+func (s *client) QueryTeam(ctx context.Context, req *QueryTeamReq) (*ListTeamsData, error) {
 	params := map[string]interface{}{
 		"team_ids":  req.TeamIds,
 		"team_type": req.TeamType,
 	}
 
 	var resp StandardResponse
-	if err := s.client.request(ctx, "GET", "/api/v1/im/team/query", params, &resp); err != nil {
+	if err := s.request(ctx, "GET", "/api/v1/im/team/query", params, &resp); err != nil {
 		return nil, fmt.Errorf("query team failed: %w", err)
 	}
 
@@ -53,9 +49,9 @@ func (s *teamService) QueryTeam(ctx context.Context, req *QueryTeamReq) (*ListTe
 }
 
 // UpdateTeam 更新群组信息
-func (s *teamService) UpdateTeam(ctx context.Context, req *UpdateTeamReq) (*UpdateTeamResp, error) {
+func (s *client) UpdateTeam(ctx context.Context, req *UpdateTeamReq) (*UpdateTeamResp, error) {
 	var resp StandardResponse
-	if err := s.client.request(ctx, "POST", "/api/v1/im/team/update", req, &resp); err != nil {
+	if err := s.request(ctx, "POST", "/api/v1/im/team/update", req, &resp); err != nil {
 		return nil, fmt.Errorf("update team failed: %w", err)
 	}
 
@@ -72,9 +68,9 @@ func (s *teamService) UpdateTeam(ctx context.Context, req *UpdateTeamReq) (*Upda
 }
 
 // AddTeamMember 拉人入群
-func (s *teamService) AddTeamMember(ctx context.Context, req *AddTeamMembersReq) (*AddTeamMembersResp, error) {
+func (s *client) AddTeamMember(ctx context.Context, req *AddTeamMembersReq) (*AddTeamMembersResp, error) {
 	var resp StandardResponse
-	if err := s.client.request(ctx, "POST", "/api/v1/im/team/add", req, &resp); err != nil {
+	if err := s.request(ctx, "POST", "/api/v1/im/team/add", req, &resp); err != nil {
 		return nil, fmt.Errorf("add team member failed: %w", err)
 	}
 
@@ -91,9 +87,9 @@ func (s *teamService) AddTeamMember(ctx context.Context, req *AddTeamMembersReq)
 }
 
 // KickTeamMember 踢人出群
-func (s *teamService) KickTeamMember(ctx context.Context, req *KickTeamMembersReq) (*KickTeamMembersResp, error) {
+func (s *client) KickTeamMember(ctx context.Context, req *KickTeamMembersReq) (*KickTeamMembersResp, error) {
 	var resp StandardResponse
-	if err := s.client.request(ctx, "POST", "/api/v1/im/team/kick", req, &resp); err != nil {
+	if err := s.request(ctx, "POST", "/api/v1/im/team/kick", req, &resp); err != nil {
 		return nil, fmt.Errorf("kick team member failed: %w", err)
 	}
 
@@ -110,9 +106,9 @@ func (s *teamService) KickTeamMember(ctx context.Context, req *KickTeamMembersRe
 }
 
 // RemoveTeam 解散群组
-func (s *teamService) RemoveTeam(ctx context.Context, req *DeleteTeamReq) error {
+func (s *client) RemoveTeam(ctx context.Context, req *DeleteTeamReq) error {
 	var resp StandardResponse
-	if err := s.client.request(ctx, "POST", "/api/v1/im/team/remove", req, &resp); err != nil {
+	if err := s.request(ctx, "POST", "/api/v1/im/team/remove", req, &resp); err != nil {
 		return fmt.Errorf("remove team failed: %w", err)
 	}
 
@@ -124,14 +120,14 @@ func (s *teamService) RemoveTeam(ctx context.Context, req *DeleteTeamReq) error 
 }
 
 // QueryTeamDetail 查询群详情
-func (s *teamService) QueryTeamDetail(ctx context.Context, req *QueryTeamDetailReq) (*QueryTeamDetailResp, error) {
+func (s *client) QueryTeamDetail(ctx context.Context, req *QueryTeamDetailReq) (*QueryTeamDetailResp, error) {
 	params := map[string]interface{}{
 		"team_id":   req.TeamID,
 		"team_type": req.TeamType,
 	}
 
 	var resp StandardResponse
-	if err := s.client.request(ctx, "GET", "/api/v1/im/team/queryDetail", params, &resp); err != nil {
+	if err := s.request(ctx, "GET", "/api/v1/im/team/queryDetail", params, &resp); err != nil {
 		return nil, fmt.Errorf("query team detail failed: %w", err)
 	}
 
@@ -148,7 +144,7 @@ func (s *teamService) QueryTeamDetail(ctx context.Context, req *QueryTeamDetailR
 }
 
 // GetJoinedTeamsPaginated 查询账号已加入群组（分页）
-func (s *teamService) GetJoinedTeamsPaginated(ctx context.Context, req *GetJoinedTeamsPaginatedReq) (*GetJoinedTeamsPaginatedResp, error) {
+func (s *client) GetJoinedTeamsPaginated(ctx context.Context, req *GetJoinedTeamsPaginatedReq) (*GetJoinedTeamsPaginatedResp, error) {
 	params := map[string]interface{}{
 		"account_id": req.AccountID,
 		"team_type":  req.TeamType,
@@ -161,7 +157,7 @@ func (s *teamService) GetJoinedTeamsPaginated(ctx context.Context, req *GetJoine
 	}
 
 	var resp StandardResponse
-	if err := s.client.request(ctx, "GET", "/api/v1/im/team/joinTeams", params, &resp); err != nil {
+	if err := s.request(ctx, "GET", "/api/v1/im/team/joinTeams", params, &resp); err != nil {
 		return nil, fmt.Errorf("get joined teams failed: %w", err)
 	}
 
@@ -178,9 +174,9 @@ func (s *teamService) GetJoinedTeamsPaginated(ctx context.Context, req *GetJoine
 }
 
 // LeaveTeam 主动退群
-func (s *teamService) LeaveTeam(ctx context.Context, req *LeaveTeamReq) error {
+func (s *client) LeaveTeam(ctx context.Context, req *LeaveTeamReq) error {
 	var resp StandardResponse
-	if err := s.client.request(ctx, "POST", "/api/v1/im/team/leave", req, &resp); err != nil {
+	if err := s.request(ctx, "POST", "/api/v1/im/team/leave", req, &resp); err != nil {
 		return fmt.Errorf("leave team failed: %w", err)
 	}
 
@@ -192,9 +188,9 @@ func (s *teamService) LeaveTeam(ctx context.Context, req *LeaveTeamReq) error {
 }
 
 // MuteTeamListAll 全员禁言/解除
-func (s *teamService) MuteTeamListAll(ctx context.Context, req *MuteAllReq) (*UpdateTeamResp, error) {
+func (s *client) MuteTeamListAll(ctx context.Context, req *MuteAllReq) (*UpdateTeamResp, error) {
 	var resp StandardResponse
-	if err := s.client.request(ctx, "POST", "/api/v1/im/team/muteTlistAll", req, &resp); err != nil {
+	if err := s.request(ctx, "POST", "/api/v1/im/team/muteTlistAll", req, &resp); err != nil {
 		return nil, fmt.Errorf("mute team list all failed: %w", err)
 	}
 
@@ -211,7 +207,7 @@ func (s *teamService) MuteTeamListAll(ctx context.Context, req *MuteAllReq) (*Up
 }
 
 // ListTeamMembers 分页查询群成员列表
-func (s *teamService) ListTeamMembers(ctx context.Context, req *ListTeamMembersReq) (*ListTeamMembersResp, error) {
+func (s *client) ListTeamMembers(ctx context.Context, req *ListTeamMembersReq) (*ListTeamMembersResp, error) {
 	params := map[string]interface{}{
 		"team_id":   req.TeamID,
 		"team_type": req.TeamType,
@@ -227,7 +223,7 @@ func (s *teamService) ListTeamMembers(ctx context.Context, req *ListTeamMembersR
 	}
 
 	var resp StandardResponse
-	if err := s.client.request(ctx, "GET", "/api/v1/im/team/listMembers", params, &resp); err != nil {
+	if err := s.request(ctx, "GET", "/api/v1/im/team/listMembers", params, &resp); err != nil {
 		return nil, fmt.Errorf("list team members failed: %w", err)
 	}
 
@@ -242,4 +238,3 @@ func (s *teamService) ListTeamMembers(ctx context.Context, req *ListTeamMembersR
 
 	return &membersResp, nil
 }
-

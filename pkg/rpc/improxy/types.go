@@ -336,49 +336,6 @@ type BroadcastNotificationResp struct {
 	} `json:"data"`
 }
 
-// ========== 认证相关类型 ==========
-
-// LoginRequest 登录请求
-type LoginRequest struct {
-	Username string `json:"username"` // 用户名
-	Password string `json:"password"` // 密码
-}
-
-// LoginReply 登录响应
-type LoginReply struct {
-	Code int    `json:"code"`
-	Msg  string `json:"msg"`
-	Data struct {
-		Token    string `json:"token"`
-		UserKey  string `json:"userKey,omitempty"`
-	} `json:"data"`
-}
-
-// RegisterRequest 注册请求
-type RegisterRequest struct {
-	Username string `json:"username"` // 用户名
-	Password string `json:"password"` // 密码
-	Email    string `json:"email,omitempty"` // 邮箱
-}
-
-// RegisterReply 注册响应
-type RegisterReply struct {
-	Code int    `json:"code"`
-	Msg  string `json:"msg"`
-	Data struct {
-		Message string `json:"message"`
-	} `json:"data"`
-}
-
-// LogoutReply 登出响应
-type LogoutReply struct {
-	Code int    `json:"code"`
-	Msg  string `json:"msg"`
-	Data struct {
-		Message string `json:"message"`
-	} `json:"data"`
-}
-
 // ========== 元信息相关类型 ==========
 
 // ProviderStatusResp 返回当前提供商及启用渠道

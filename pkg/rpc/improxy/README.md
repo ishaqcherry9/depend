@@ -4,11 +4,12 @@ im-proxy SDK 是一个用于调用 im-proxy 服务的 Go 客户端库。它封�
 
 ## 功能特性
 
-- ✅ 完整的接口覆盖：用户管理、群组管理、消息管理、认证、元信息
-- ✅ 类型安全：所有请求和响应都有明确的类型定义
-- ✅ 易于使用：简洁的 API 设计，支持链式调用
-- ✅ 灵活配置：支持自定义超时、请求头等
-- ✅ 错误处理：统一的错误处理机制
+- ✅ **完整的接口覆盖**：用户管理、群组管理、消息管理、元信息
+- ✅ **类型安全**：所有请求和响应都有明确的类型定义
+- ✅ **易于使用**：简洁的 API 设计，支持全局单例模式
+- ✅ **灵活配置**：支持自定义超时、请求头等
+- ✅ **错误处理**：统一的错误处理机制
+- ✅ **线程安全**：全局客户端支持并发调用
 
 ## 安装
 
@@ -21,7 +22,11 @@ go get github.com/ishaqcherry9/depend/pkg/rpc/improxy
 ### 方式一：使用全局单例（推荐）
 
 ```go
-import "github.com/ishaqcherry9/depend/pkg/rpc/improxy"
+import (
+    "context"
+    "time"
+    "github.com/ishaqcherry9/depend/pkg/rpc/improxy"
+)
 
 // 在应用启动时初始化全局客户端
 func init() {
@@ -37,36 +42,31 @@ func main() {
     ctx := context.Background()
     client := improxy.GetClient()
     
-    // 使用客户端（简化后的 API）
+    // 使用客户端
     tokenResp, err := client.Register(ctx, &improxy.RegisterReq{
         UID:  "user123",
         Name: "张三",
     })
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("Token: %s\n", tokenResp.Tokens)
 }
 ```
 
-### 方式二：创建独立客户端实例
-
-```go
-import "github.com/ishaqcherry9/depend/pkg/rpc/improxy"
-
-// 创建独立的客户端实例
-client := improxy.NewClient(
-    improxy.WithBaseURL("http://localhost:8080"),
-    improxy.WithTimeout(30 * time.Second),
-)
-
-// 或者设置自定义请求头（如认证token）
-client := improxy.NewClient(
-    improxy.WithBaseURL("http://localhost:8080"),
-    improxy.WithHeader("Authorization", "Bearer your-token"),
-)
-```
 
 ### 用户管理
 
 ```go
+import (
+    "context"
+    "fmt"
+    "log"
+    "github.com/ishaqcherry9/depend/pkg/rpc/improxy"
+)
+
 ctx := context.Background()
+client := improxy.GetClient()
 
 // 注册用户
 tokenResp, err := client.Register(ctx, &improxy.RegisterReq{
@@ -98,6 +98,14 @@ tokenResp, err = client.RefreshToken(ctx, &improxy.RefreshReq{
 ### 群组管理
 
 ```go
+import (
+    "context"
+    "github.com/ishaqcherry9/depend/pkg/rpc/improxy"
+)
+
+ctx := context.Background()
+client := improxy.GetClient()
+
 // 创建群组
 teamInfo, err := client.CreateTeam(ctx, &improxy.CreateTeamReq{
     OwnerAccountID: "user123",
@@ -191,6 +199,14 @@ err = client.RemoveTeam(ctx, &improxy.DeleteTeamReq{
 ### 消息管理
 
 ```go
+import (
+    "context"
+    "github.com/ishaqcherry9/depend/pkg/rpc/improxy"
+)
+
+ctx := context.Background()
+client := improxy.GetClient()
+
 // 发送消息
 err := client.SendMsg(ctx, &improxy.MessageInfo{
     FromUID:     "user123",
@@ -210,33 +226,19 @@ broadcastResp, err := client.BroadcastMsg(ctx, &improxy.BroadcastMessageInfo{
 })
 ```
 
-### 认证
-
-```go
-// 登录
-loginResp, err := client.Login(ctx, &improxy.LoginRequest{
-    Username: "admin",
-    Password: "123456",
-})
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Printf("Token: %s\n", loginResp.Data.Token)
-
-// 注册（注意：认证的注册方法名为 RegisterAuth，避免与用户注册冲突）
-registerResp, err := client.RegisterAuth(ctx, &improxy.RegisterRequest{
-    Username: "newuser",
-    Password: "password123",
-    Email:    "user@example.com",
-})
-
-// 登出
-err = client.Logout(ctx)
-```
-
 ### 元信息
 
 ```go
+import (
+    "context"
+    "fmt"
+    "log"
+    "github.com/ishaqcherry9/depend/pkg/rpc/improxy"
+)
+
+ctx := context.Background()
+client := improxy.GetClient()
+
 // 获取IM渠道状态
 statusResp, err := client.GetProviderStatus(ctx)
 if err != nil {
@@ -253,29 +255,17 @@ fmt.Printf("Enabled Providers: %v\n", statusResp.EnabledProviders)
 设置 im-proxy 服务的基础 URL。
 
 ```go
-// 全局单例方式
 improxy.Init(
-    improxy.WithBaseURL("https://api.example.com"),
-)
-
-// 独立实例方式
-client := improxy.NewClient(
     improxy.WithBaseURL("https://api.example.com"),
 )
 ```
 
 ### WithTimeout
 
-设置请求超时时间。
+设置请求超时时间。如果不设置，默认超时时间为 `2 * time.Second`。
 
 ```go
-// 全局单例方式
 improxy.Init(
-    improxy.WithTimeout(60 * time.Second),
-)
-
-// 独立实例方式
-client := improxy.NewClient(
     improxy.WithTimeout(60 * time.Second),
 )
 ```
@@ -285,14 +275,7 @@ client := improxy.NewClient(
 设置单个请求头。
 
 ```go
-// 全局单例方式
 improxy.Init(
-    improxy.WithHeader("Authorization", "Bearer token"),
-    improxy.WithHeader("X-Request-ID", "request-id"),
-)
-
-// 独立实例方式
-client := improxy.NewClient(
     improxy.WithHeader("Authorization", "Bearer token"),
     improxy.WithHeader("X-Request-ID", "request-id"),
 )
@@ -303,16 +286,7 @@ client := improxy.NewClient(
 批量设置请求头。
 
 ```go
-// 全局单例方式
 improxy.Init(
-    improxy.WithHeaders(map[string]string{
-        "Authorization": "Bearer token",
-        "X-Request-ID":  "request-id",
-    }),
-)
-
-// 独立实例方式
-client := improxy.NewClient(
     improxy.WithHeaders(map[string]string{
         "Authorization": "Bearer token",
         "X-Request-ID":  "request-id",
@@ -337,7 +311,7 @@ improxy.Init(
 - `Init` 使用 `sync.Once` 确保只初始化一次
 - 如果未调用 `Init`，`GetClient()` 会返回 `nil`
 - **`baseURL` 是必需的**，如果未传入会 panic
-- 如果 `timeout` 为 0，默认使用 `30 * time.Second`
+- 如果未设置 `timeout`，默认使用 `2 * time.Second`
 
 ### GetClient
 
@@ -374,7 +348,13 @@ if err != nil {
     return err
 }
 // 使用 tokenResp
+fmt.Printf("Token: %s\n", tokenResp.Tokens)
 ```
+
+**错误类型：**
+- 网络错误：连接失败、超时等
+- HTTP 错误：非 200 状态码，错误信息会包含状态码和响应体
+- 解析错误：JSON 序列化/反序列化失败
 
 ## 接口列表
 
@@ -406,22 +386,21 @@ if err != nil {
 - `SendMsg` - 发送消息
 - `BroadcastMsg` - 发送广播消息
 
-### 认证
-
-- `Login` - 登录
-- `RegisterAuth` - 注册（注意：避免与用户注册方法名冲突）
-- `Logout` - 登出
-
 ### 元信息
 
 - `GetProviderStatus` - 获取当前IM渠道状态
 
 ## 注意事项
 
-1. 所有接口都需要传入 `context.Context`，用于控制请求的取消和超时
-2. 请求和响应类型都有详细的字段注释，请参考类型定义
-3. SDK 会自动处理 JSON 序列化和反序列化
-4. 所有错误都会包含详细的错误信息，便于调试
+1. **初始化要求**：使用前必须先调用 `improxy.Init()` 初始化客户端，`baseURL` 是必需的
+2. **Context 使用**：所有接口都需要传入 `context.Context`，用于控制请求的取消和超时
+3. **类型安全**：请求和响应类型都有详细的字段注释，请参考类型定义文件
+4. **JSON 处理**：SDK 会自动处理 JSON 序列化和反序列化
+5. **错误处理**：所有错误都会包含详细的错误信息，便于调试
+6. **线程安全**：全局客户端使用 `sync.Once` 确保线程安全，可以在多个 goroutine 中并发使用
+7. **默认配置**：
+   - 默认超时时间：`2 * time.Second`
+   - 默认 Content-Type：`application/json`
 
 ## License
 
