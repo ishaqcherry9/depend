@@ -15,6 +15,9 @@ var (
 	gClientOnce sync.Once
 )
 
+// 约束Client接口的实现，确保client结构体实现了Client接口的所有方法
+var _ Client = (*client)(nil)
+
 // Client im-proxy SDK 客户端
 type Client interface {
 	// 用户管理接口
