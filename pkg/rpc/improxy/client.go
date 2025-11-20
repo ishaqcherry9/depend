@@ -3,10 +3,16 @@ package improxy
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/ishaqcherry9/depend/pkg/httpcli"
 	jsoniter "github.com/ishaqcherry9/depend/pkg/json-iterator"
+)
+
+var (
+	gClient     Client
+	gClientOnce sync.Once
 )
 
 // Client im-proxy SDK 客户端
@@ -199,4 +205,39 @@ func parseResponse(data interface{}, target interface{}) error {
 	}
 
 	return nil
+}
+
+// Init 初始化全局 im-proxy SDK 客户端
+// baseURL 必须传入，否则会 panic
+// 如果 timeout 为 0，会使用默认值 30 秒
+func Init(opts ...Option) {
+	gClientOnce.Do(func() {
+		c := &client{
+			baseURL: "", // 初始化为空，必须通过 Option 设置
+			timeout: 30 * time.Second,
+			headers: make(map[string]string),
+		}
+
+		for _, opt := range opts {
+			opt(c)
+		}
+
+		// 检查 baseURL 是否已设置
+		if c.baseURL == "" {
+			panic("improxy: baseURL is required, please use improxy.WithBaseURL() to set it")
+		}
+
+		// 设置默认 Content-Type
+		if _, ok := c.headers["Content-Type"]; !ok {
+			c.headers["Content-Type"] = "application/json"
+		}
+
+		gClient = c
+	})
+}
+
+// GetClient 获取全局 im-proxy SDK 客户端
+// 如果未通过 Init 初始化，返回 nil
+func GetClient() Client {
+	return gClient
 }

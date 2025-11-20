@@ -18,12 +18,39 @@ go get github.com/ishaqcherry9/depend/pkg/rpc/improxy
 
 ## 快速开始
 
-### 创建客户端
+### 方式一：使用全局单例（推荐）
 
 ```go
 import "github.com/ishaqcherry9/depend/pkg/rpc/improxy"
 
-// 使用默认配置
+// 在应用启动时初始化全局客户端
+func init() {
+    improxy.Init(
+        improxy.WithBaseURL("http://localhost:8080"),
+        improxy.WithTimeout(30 * time.Second),
+        improxy.WithHeader("Authorization", "Bearer your-token"),
+    )
+}
+
+// 在代码中直接使用全局客户端
+func main() {
+    ctx := context.Background()
+    client := improxy.GetClient()
+    
+    // 使用客户端
+    tokenResp, err := client.User().Register(ctx, &improxy.RegisterReq{
+        UID:  "user123",
+        Name: "张三",
+    })
+}
+```
+
+### 方式二：创建独立客户端实例
+
+```go
+import "github.com/ishaqcherry9/depend/pkg/rpc/improxy"
+
+// 创建独立的客户端实例
 client := improxy.NewClient(
     improxy.WithBaseURL("http://localhost:8080"),
     improxy.WithTimeout(30 * time.Second),
@@ -226,6 +253,12 @@ fmt.Printf("Enabled Providers: %v\n", statusResp.EnabledProviders)
 设置 im-proxy 服务的基础 URL。
 
 ```go
+// 全局单例方式
+improxy.Init(
+    improxy.WithBaseURL("https://api.example.com"),
+)
+
+// 独立实例方式
 client := improxy.NewClient(
     improxy.WithBaseURL("https://api.example.com"),
 )
@@ -236,6 +269,12 @@ client := improxy.NewClient(
 设置请求超时时间。
 
 ```go
+// 全局单例方式
+improxy.Init(
+    improxy.WithTimeout(60 * time.Second),
+)
+
+// 独立实例方式
 client := improxy.NewClient(
     improxy.WithTimeout(60 * time.Second),
 )
@@ -246,6 +285,13 @@ client := improxy.NewClient(
 设置单个请求头。
 
 ```go
+// 全局单例方式
+improxy.Init(
+    improxy.WithHeader("Authorization", "Bearer token"),
+    improxy.WithHeader("X-Request-ID", "request-id"),
+)
+
+// 独立实例方式
 client := improxy.NewClient(
     improxy.WithHeader("Authorization", "Bearer token"),
     improxy.WithHeader("X-Request-ID", "request-id"),
@@ -257,6 +303,15 @@ client := improxy.NewClient(
 批量设置请求头。
 
 ```go
+// 全局单例方式
+improxy.Init(
+    improxy.WithHeaders(map[string]string{
+        "Authorization": "Bearer token",
+        "X-Request-ID":  "request-id",
+    }),
+)
+
+// 独立实例方式
 client := improxy.NewClient(
     improxy.WithHeaders(map[string]string{
         "Authorization": "Bearer token",
@@ -264,6 +319,45 @@ client := improxy.NewClient(
     }),
 )
 ```
+
+## 全局单例 API
+
+### Init
+
+初始化全局 im-proxy SDK 客户端。应该在应用启动时调用一次。
+
+```go
+improxy.Init(
+    improxy.WithBaseURL("http://localhost:8080"),
+    improxy.WithTimeout(30 * time.Second),
+)
+```
+
+**注意：**
+- `Init` 使用 `sync.Once` 确保只初始化一次
+- 如果未调用 `Init`，`GetClient()` 会返回 `nil`
+- **`baseURL` 是必需的**，如果未传入会 panic
+- 如果 `timeout` 为 0，默认使用 `30 * time.Second`
+
+### GetClient
+
+获取全局 im-proxy SDK 客户端。
+
+```go
+client := improxy.GetClient()
+if client == nil {
+    log.Fatal("improxy client is not initialized, please call improxy.Init() first")
+}
+tokenResp, err := client.User().Register(ctx, &improxy.RegisterReq{
+    UID:  "user123",
+    Name: "张三",
+})
+```
+
+**注意：**
+- 如果未通过 `Init()` 初始化，`GetClient()` 会返回 `nil`
+- 使用前必须先调用 `Init()` 进行初始化
+- 线程安全，可以在多个 goroutine 中并发调用
 
 ## 错误处理
 

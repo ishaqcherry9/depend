@@ -8,8 +8,61 @@ import (
 	"github.com/ishaqcherry9/depend/pkg/rpc/improxy"
 )
 
+func ExampleInit() {
+	// 初始化全局客户端（在应用启动时调用一次）
+	// baseURL 是必需的，如果未传入会 panic
+	improxy.Init(
+		improxy.WithBaseURL("http://localhost:8080"), // 必需
+		improxy.WithTimeout(30*time.Second),
+	)
+
+	// 获取全局客户端并使用
+	ctx := context.Background()
+	client := improxy.GetClient()
+	if client == nil {
+		fmt.Println("Client is not initialized")
+		return
+	}
+	tokenResp, err := client.User().Register(ctx, &improxy.RegisterReq{
+		UID:    "user123",
+		Name:   "张三",
+		Avatar: "https://example.com/avatar.jpg",
+	})
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+	fmt.Printf("Token: %s\n", tokenResp.Tokens)
+}
+
+func ExampleGetClient() {
+	// 必须先初始化
+	improxy.Init(
+		improxy.WithBaseURL("http://localhost:8080"),
+	)
+
+	// 获取全局客户端
+	ctx := context.Background()
+	client := improxy.GetClient()
+	if client == nil {
+		fmt.Println("Client is not initialized")
+		return
+	}
+
+	// 使用客户端
+	tokenResp, err := client.User().Register(ctx, &improxy.RegisterReq{
+		UID:  "user123",
+		Name: "张三",
+	})
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+	fmt.Printf("Token: %s\n", tokenResp.Tokens)
+}
+
 func ExampleNewClient() {
-	// 创建客户端
+	// 创建独立的客户端实例
 	client := improxy.NewClient(
 		improxy.WithBaseURL("http://localhost:8080"),
 		improxy.WithTimeout(30*time.Second),
