@@ -32,8 +32,7 @@ import (
 func init() {
     improxy.Init(
         improxy.WithBaseURL("http://localhost:8080"),
-        improxy.WithTimeout(30 * time.Second),
-        improxy.WithHeader("Authorization", "Bearer your-token"),
+        improxy.WithTimeout(2 * time.Second),
     )
 }
 
