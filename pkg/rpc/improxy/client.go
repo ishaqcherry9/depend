@@ -8,6 +8,7 @@ import (
 
 	"github.com/ishaqcherry9/depend/pkg/httpcli"
 	jsoniter "github.com/ishaqcherry9/depend/pkg/json-iterator"
+	"github.com/ishaqcherry9/depend/pkg/logger"
 )
 
 var (
@@ -122,6 +123,12 @@ func newClient(opts ...Option) Client {
 func (c *client) request(ctx context.Context, method, path string, reqBody interface{}, respBody interface{}) error {
 	url := fmt.Sprintf("%s%s", c.baseURL, path)
 
+	logger.Debug(ctx, "request start",
+		logger.String("method", method),
+		logger.String("path", path),
+		logger.String("url", url),
+	)
+
 	req := httpcli.New()
 	req.SetURL(url)
 	req.SetTimeout(c.timeout)
@@ -138,14 +145,33 @@ func (c *client) request(ctx context.Context, method, path string, reqBody inter
 		}
 		resp, err := req.GET()
 		if err != nil {
+			logger.Error(ctx, "GET request failed",
+				logger.String("method", method),
+				logger.String("url", url),
+				logger.Err(err),
+			)
 			return fmt.Errorf("GET request failed: %w", err)
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != 200 {
 			body, _ := resp.ReadBody()
-			return fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+			err := fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+			logger.Error(ctx, "GET request failed with non-200 status",
+				logger.String("method", method),
+				logger.String("url", url),
+				logger.Int("status_code", resp.StatusCode),
+				logger.String("response_body", string(body)),
+				logger.Err(err),
+			)
+			return err
 		}
+
+		logger.Info(ctx, "request success",
+			logger.String("method", method),
+			logger.String("url", url),
+			logger.Int("status_code", resp.StatusCode),
+		)
 
 		return resp.BindJSON(respBody)
 	}
@@ -167,18 +193,43 @@ func (c *client) request(ctx context.Context, method, path string, reqBody inter
 	case "DELETE":
 		resp, err = req.DELETE()
 	default:
-		return fmt.Errorf("unsupported method: %s", method)
+		err := fmt.Errorf("unsupported method: %s", method)
+		logger.Error(ctx, "unsupported request method",
+			logger.String("method", method),
+			logger.String("url", url),
+			logger.Err(err),
+		)
+		return err
 	}
 
 	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("%s request failed", method),
+			logger.String("method", method),
+			logger.String("url", url),
+			logger.Err(err),
+		)
 		return fmt.Errorf("%s request failed: %w", method, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		body, _ := resp.ReadBody()
-		return fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+		err := fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+		logger.Error(ctx, fmt.Sprintf("%s request failed with non-200 status", method),
+			logger.String("method", method),
+			logger.String("url", url),
+			logger.Int("status_code", resp.StatusCode),
+			logger.String("response_body", string(body)),
+			logger.Err(err),
+		)
+		return err
 	}
+
+	logger.Info(ctx, "request success",
+		logger.String("method", method),
+		logger.String("url", url),
+		logger.Int("status_code", resp.StatusCode),
+	)
 
 	return resp.BindJSON(respBody)
 }
