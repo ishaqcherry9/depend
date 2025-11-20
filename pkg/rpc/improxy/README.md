@@ -37,8 +37,8 @@ func main() {
     ctx := context.Background()
     client := improxy.GetClient()
     
-    // 使用客户端
-    tokenResp, err := client.User().Register(ctx, &improxy.RegisterReq{
+    // 使用客户端（简化后的 API）
+    tokenResp, err := client.Register(ctx, &improxy.RegisterReq{
         UID:  "user123",
         Name: "张三",
     })
@@ -69,7 +69,7 @@ client := improxy.NewClient(
 ctx := context.Background()
 
 // 注册用户
-tokenResp, err := client.User().Register(ctx, &improxy.RegisterReq{
+tokenResp, err := client.Register(ctx, &improxy.RegisterReq{
     UID:    "user123",
     Name:   "张三",
     Avatar: "https://example.com/avatar.jpg",
@@ -80,17 +80,17 @@ if err != nil {
 fmt.Printf("Token: %s\n", tokenResp.Tokens)
 
 // 禁用用户
-err = client.User().Disable(ctx, &improxy.UIDReq{
+err = client.DisableUser(ctx, &improxy.UIDReq{
     UID: "user123",
 })
 
 // 启用用户
-err = client.User().Enable(ctx, &improxy.UIDReq{
+err = client.EnableUser(ctx, &improxy.UIDReq{
     UID: "user123",
 })
 
 // 刷新Token
-tokenResp, err = client.User().RefreshToken(ctx, &improxy.RefreshReq{
+tokenResp, err = client.RefreshToken(ctx, &improxy.RefreshReq{
     UID: "user123",
 })
 ```
@@ -99,7 +99,7 @@ tokenResp, err = client.User().RefreshToken(ctx, &improxy.RefreshReq{
 
 ```go
 // 创建群组
-teamInfo, err := client.Team().CreateTeam(ctx, &improxy.CreateTeamReq{
+teamInfo, err := client.CreateTeam(ctx, &improxy.CreateTeamReq{
     OwnerAccountID: "user123",
     TeamType:       1,
     Name:           "测试群组",
@@ -114,13 +114,13 @@ teamInfo, err := client.Team().CreateTeam(ctx, &improxy.CreateTeamReq{
 })
 
 // 查询群组
-listData, err := client.Team().QueryTeam(ctx, &improxy.QueryTeamReq{
+listData, err := client.QueryTeam(ctx, &improxy.QueryTeamReq{
     TeamIds:  "123456,789012",
     TeamType: 1,
 })
 
 // 更新群组信息
-updateResp, err := client.Team().UpdateTeam(ctx, &improxy.UpdateTeamReq{
+updateResp, err := client.UpdateTeam(ctx, &improxy.UpdateTeamReq{
     TeamID:     "123456",
     TeamType:   1,
     Name:       "更新后的群名称",
@@ -128,7 +128,7 @@ updateResp, err := client.Team().UpdateTeam(ctx, &improxy.UpdateTeamReq{
 })
 
 // 拉人入群
-addResp, err := client.Team().AddTeamMember(ctx, &improxy.AddTeamMembersReq{
+addResp, err := client.AddTeamMember(ctx, &improxy.AddTeamMembersReq{
     OperatorID:       "user123",
     TeamID:           "123456",
     TeamType:         1,
@@ -137,7 +137,7 @@ addResp, err := client.Team().AddTeamMember(ctx, &improxy.AddTeamMembersReq{
 })
 
 // 踢人出群
-kickResp, err := client.Team().KickTeamMember(ctx, &improxy.KickTeamMembersReq{
+kickResp, err := client.KickTeamMember(ctx, &improxy.KickTeamMembersReq{
     OperatorID:     "user123",
     TeamID:         "123456",
     TeamType:       1,
@@ -145,27 +145,27 @@ kickResp, err := client.Team().KickTeamMember(ctx, &improxy.KickTeamMembersReq{
 })
 
 // 查询群详情
-detailResp, err := client.Team().QueryTeamDetail(ctx, &improxy.QueryTeamDetailReq{
+detailResp, err := client.QueryTeamDetail(ctx, &improxy.QueryTeamDetailReq{
     TeamID:   "123456",
     TeamType: 1,
 })
 
 // 查询已加入的群组（分页）
-teamsResp, err := client.Team().GetJoinedTeamsPaginated(ctx, &improxy.GetJoinedTeamsPaginatedReq{
+teamsResp, err := client.GetJoinedTeamsPaginated(ctx, &improxy.GetJoinedTeamsPaginatedReq{
     AccountID: "user123",
     TeamType:  1,
     Limit:     20,
 })
 
 // 主动退群
-err = client.Team().LeaveTeam(ctx, &improxy.LeaveTeamReq{
+err = client.LeaveTeam(ctx, &improxy.LeaveTeamReq{
     AccountID: "user123",
     TeamID:    "123456",
     TeamType:  1,
 })
 
 // 全员禁言
-muteResp, err := client.Team().MuteTeamListAll(ctx, &improxy.MuteAllReq{
+muteResp, err := client.MuteTeamListAll(ctx, &improxy.MuteAllReq{
     TeamID:         "123456",
     TeamType:       1,
     OperatorID:     "user123",
@@ -173,7 +173,7 @@ muteResp, err := client.Team().MuteTeamListAll(ctx, &improxy.MuteAllReq{
 })
 
 // 分页查询群成员列表
-membersResp, err := client.Team().ListTeamMembers(ctx, &improxy.ListTeamMembersReq{
+membersResp, err := client.ListTeamMembers(ctx, &improxy.ListTeamMembersReq{
     TeamID:     "123456",
     TeamType:   1,
     Descending: false,
@@ -181,7 +181,7 @@ membersResp, err := client.Team().ListTeamMembers(ctx, &improxy.ListTeamMembersR
 })
 
 // 解散群组
-err = client.Team().RemoveTeam(ctx, &improxy.DeleteTeamReq{
+err = client.RemoveTeam(ctx, &improxy.DeleteTeamReq{
     TeamID:     "123456",
     TeamType:   1,
     OperatorID: "user123",
@@ -192,7 +192,7 @@ err = client.Team().RemoveTeam(ctx, &improxy.DeleteTeamReq{
 
 ```go
 // 发送消息
-err := client.Message().SendMsg(ctx, &improxy.MessageInfo{
+err := client.SendMsg(ctx, &improxy.MessageInfo{
     FromUID:     "user123",
     ToUID:       "user456",
     ToType:      "1", // 1：单聊会话；2：高级群会话
@@ -202,7 +202,7 @@ err := client.Message().SendMsg(ctx, &improxy.MessageInfo{
 })
 
 // 发送广播消息
-broadcastResp, err := client.Message().BroadcastMsg(ctx, &improxy.BroadcastMessageInfo{
+broadcastResp, err := client.BroadcastMsg(ctx, &improxy.BroadcastMessageInfo{
     Content:       "系统通知：服务器将于今晚进行维护",
     FromAccountID: "system",
     TTL:           168, // 7天
@@ -214,7 +214,7 @@ broadcastResp, err := client.Message().BroadcastMsg(ctx, &improxy.BroadcastMessa
 
 ```go
 // 登录
-loginResp, err := client.Auth().Login(ctx, &improxy.LoginRequest{
+loginResp, err := client.Login(ctx, &improxy.LoginRequest{
     Username: "admin",
     Password: "123456",
 })
@@ -223,22 +223,22 @@ if err != nil {
 }
 fmt.Printf("Token: %s\n", loginResp.Data.Token)
 
-// 注册
-registerResp, err := client.Auth().Register(ctx, &improxy.RegisterRequest{
+// 注册（注意：认证的注册方法名为 RegisterAuth，避免与用户注册冲突）
+registerResp, err := client.RegisterAuth(ctx, &improxy.RegisterRequest{
     Username: "newuser",
     Password: "password123",
     Email:    "user@example.com",
 })
 
 // 登出
-err = client.Auth().Logout(ctx)
+err = client.Logout(ctx)
 ```
 
 ### 元信息
 
 ```go
 // 获取IM渠道状态
-statusResp, err := client.Meta().GetProviderStatus(ctx)
+statusResp, err := client.GetProviderStatus(ctx)
 if err != nil {
     log.Fatal(err)
 }
@@ -348,7 +348,7 @@ client := improxy.GetClient()
 if client == nil {
     log.Fatal("improxy client is not initialized, please call improxy.Init() first")
 }
-tokenResp, err := client.User().Register(ctx, &improxy.RegisterReq{
+tokenResp, err := client.Register(ctx, &improxy.RegisterReq{
     UID:  "user123",
     Name: "张三",
 })
@@ -364,7 +364,7 @@ tokenResp, err := client.User().Register(ctx, &improxy.RegisterReq{
 所有方法都会返回错误，建议使用标准的 Go 错误处理方式：
 
 ```go
-tokenResp, err := client.User().Register(ctx, &improxy.RegisterReq{
+tokenResp, err := client.Register(ctx, &improxy.RegisterReq{
     UID:  "user123",
     Name: "张三",
 })
@@ -378,14 +378,16 @@ if err != nil {
 
 ## 接口列表
 
-### 用户管理 (UserService)
+所有接口都直接通过 `Client` 调用，无需通过子服务。
+
+### 用户管理
 
 - `Register` - 用户注册
-- `Disable` - 禁用用户
-- `Enable` - 启用用户
+- `DisableUser` - 禁用用户
+- `EnableUser` - 启用用户
 - `RefreshToken` - 刷新用户Token
 
-### 群组管理 (TeamService)
+### 群组管理
 
 - `CreateTeam` - 创建群组
 - `QueryTeam` - 批量查询群组信息列表
@@ -399,18 +401,18 @@ if err != nil {
 - `MuteTeamListAll` - 全员禁言/解除
 - `ListTeamMembers` - 分页查询群成员列表
 
-### 消息管理 (MessageService)
+### 消息管理
 
 - `SendMsg` - 发送消息
 - `BroadcastMsg` - 发送广播消息
 
-### 认证 (AuthService)
+### 认证
 
 - `Login` - 登录
-- `Register` - 注册
+- `RegisterAuth` - 注册（注意：避免与用户注册方法名冲突）
 - `Logout` - 登出
 
-### 元信息 (MetaService)
+### 元信息
 
 - `GetProviderStatus` - 获取当前IM渠道状态
 

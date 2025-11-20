@@ -17,16 +17,36 @@ var (
 
 // Client im-proxy SDK 客户端
 type Client interface {
-	// User 用户管理接口
-	User() UserService
-	// Team 群组管理接口
-	Team() TeamService
-	// Message 消息管理接口
-	Message() MessageService
-	// Auth 认证接口
-	Auth() AuthService
-	// Meta 元信息接口
-	Meta() MetaService
+	// 用户管理接口
+	Register(ctx context.Context, req *RegisterReq) (*TokenResp, error)
+	DisableUser(ctx context.Context, req *UIDReq) error
+	EnableUser(ctx context.Context, req *UIDReq) error
+	RefreshToken(ctx context.Context, req *RefreshReq) (*TokenResp, error)
+
+	// 群组管理接口
+	CreateTeam(ctx context.Context, req *CreateTeamReq) (*TeamInfoRsp, error)
+	QueryTeam(ctx context.Context, req *QueryTeamReq) (*ListTeamsData, error)
+	UpdateTeam(ctx context.Context, req *UpdateTeamReq) (*UpdateTeamResp, error)
+	AddTeamMember(ctx context.Context, req *AddTeamMembersReq) (*AddTeamMembersResp, error)
+	KickTeamMember(ctx context.Context, req *KickTeamMembersReq) (*KickTeamMembersResp, error)
+	RemoveTeam(ctx context.Context, req *DeleteTeamReq) error
+	QueryTeamDetail(ctx context.Context, req *QueryTeamDetailReq) (*QueryTeamDetailResp, error)
+	GetJoinedTeamsPaginated(ctx context.Context, req *GetJoinedTeamsPaginatedReq) (*GetJoinedTeamsPaginatedResp, error)
+	LeaveTeam(ctx context.Context, req *LeaveTeamReq) error
+	MuteTeamListAll(ctx context.Context, req *MuteAllReq) (*UpdateTeamResp, error)
+	ListTeamMembers(ctx context.Context, req *ListTeamMembersReq) (*ListTeamMembersResp, error)
+
+	// 消息管理接口
+	SendMsg(ctx context.Context, req *MessageInfo) error
+	BroadcastMsg(ctx context.Context, req *BroadcastMessageInfo) (*BroadcastNotificationResp, error)
+
+	// 认证接口
+	Login(ctx context.Context, req *LoginRequest) (*LoginReply, error)
+	RegisterAuth(ctx context.Context, req *RegisterRequest) (*RegisterReply, error)
+	Logout(ctx context.Context) error
+
+	// 元信息接口
+	GetProviderStatus(ctx context.Context) (*ProviderStatusResp, error)
 }
 
 type client struct {
@@ -74,16 +94,22 @@ func WithHeader(key, value string) Option {
 	}
 }
 
-// NewClient 创建新的 im-proxy SDK 客户端
-func NewClient(opts ...Option) Client {
+// newClient 创建客户端实例的内部函数
+func newClient(opts ...Option) Client {
+
 	c := &client{
-		baseURL: "http://localhost:8080",
-		timeout: 30 * time.Second,
+		baseURL: "",
+		timeout: 2 * time.Second,
 		headers: make(map[string]string),
 	}
 
 	for _, opt := range opts {
 		opt(c)
+	}
+
+	// 检查 baseURL
+	if c.baseURL == "" {
+		panic("improxy: baseURL is required, please use improxy.WithBaseURL() to set it")
 	}
 
 	// 设置默认 Content-Type
@@ -94,29 +120,93 @@ func NewClient(opts ...Option) Client {
 	return c
 }
 
-// User 返回用户管理服务
-func (c *client) User() UserService {
-	return &userService{client: c}
+// 用户管理接口实现
+func (c *client) Register(ctx context.Context, req *RegisterReq) (*TokenResp, error) {
+	return (&userService{client: c}).Register(ctx, req)
 }
 
-// Team 返回群组管理服务
-func (c *client) Team() TeamService {
-	return &teamService{client: c}
+func (c *client) DisableUser(ctx context.Context, req *UIDReq) error {
+	return (&userService{client: c}).Disable(ctx, req)
 }
 
-// Message 返回消息管理服务
-func (c *client) Message() MessageService {
-	return &messageService{client: c}
+func (c *client) EnableUser(ctx context.Context, req *UIDReq) error {
+	return (&userService{client: c}).Enable(ctx, req)
 }
 
-// Auth 返回认证服务
-func (c *client) Auth() AuthService {
-	return &authService{client: c}
+func (c *client) RefreshToken(ctx context.Context, req *RefreshReq) (*TokenResp, error) {
+	return (&userService{client: c}).RefreshToken(ctx, req)
 }
 
-// Meta 返回元信息服务
-func (c *client) Meta() MetaService {
-	return &metaService{client: c}
+// 群组管理接口实现
+func (c *client) CreateTeam(ctx context.Context, req *CreateTeamReq) (*TeamInfoRsp, error) {
+	return (&teamService{client: c}).CreateTeam(ctx, req)
+}
+
+func (c *client) QueryTeam(ctx context.Context, req *QueryTeamReq) (*ListTeamsData, error) {
+	return (&teamService{client: c}).QueryTeam(ctx, req)
+}
+
+func (c *client) UpdateTeam(ctx context.Context, req *UpdateTeamReq) (*UpdateTeamResp, error) {
+	return (&teamService{client: c}).UpdateTeam(ctx, req)
+}
+
+func (c *client) AddTeamMember(ctx context.Context, req *AddTeamMembersReq) (*AddTeamMembersResp, error) {
+	return (&teamService{client: c}).AddTeamMember(ctx, req)
+}
+
+func (c *client) KickTeamMember(ctx context.Context, req *KickTeamMembersReq) (*KickTeamMembersResp, error) {
+	return (&teamService{client: c}).KickTeamMember(ctx, req)
+}
+
+func (c *client) RemoveTeam(ctx context.Context, req *DeleteTeamReq) error {
+	return (&teamService{client: c}).RemoveTeam(ctx, req)
+}
+
+func (c *client) QueryTeamDetail(ctx context.Context, req *QueryTeamDetailReq) (*QueryTeamDetailResp, error) {
+	return (&teamService{client: c}).QueryTeamDetail(ctx, req)
+}
+
+func (c *client) GetJoinedTeamsPaginated(ctx context.Context, req *GetJoinedTeamsPaginatedReq) (*GetJoinedTeamsPaginatedResp, error) {
+	return (&teamService{client: c}).GetJoinedTeamsPaginated(ctx, req)
+}
+
+func (c *client) LeaveTeam(ctx context.Context, req *LeaveTeamReq) error {
+	return (&teamService{client: c}).LeaveTeam(ctx, req)
+}
+
+func (c *client) MuteTeamListAll(ctx context.Context, req *MuteAllReq) (*UpdateTeamResp, error) {
+	return (&teamService{client: c}).MuteTeamListAll(ctx, req)
+}
+
+func (c *client) ListTeamMembers(ctx context.Context, req *ListTeamMembersReq) (*ListTeamMembersResp, error) {
+	return (&teamService{client: c}).ListTeamMembers(ctx, req)
+}
+
+// 消息管理接口实现
+func (c *client) SendMsg(ctx context.Context, req *MessageInfo) error {
+	return (&messageService{client: c}).SendMsg(ctx, req)
+}
+
+func (c *client) BroadcastMsg(ctx context.Context, req *BroadcastMessageInfo) (*BroadcastNotificationResp, error) {
+	return (&messageService{client: c}).BroadcastMsg(ctx, req)
+}
+
+// 认证接口实现
+func (c *client) Login(ctx context.Context, req *LoginRequest) (*LoginReply, error) {
+	return (&authService{client: c}).Login(ctx, req)
+}
+
+func (c *client) RegisterAuth(ctx context.Context, req *RegisterRequest) (*RegisterReply, error) {
+	return (&authService{client: c}).Register(ctx, req)
+}
+
+func (c *client) Logout(ctx context.Context) error {
+	return (&authService{client: c}).Logout(ctx)
+}
+
+// 元信息接口实现
+func (c *client) GetProviderStatus(ctx context.Context) (*ProviderStatusResp, error) {
+	return (&metaService{client: c}).GetProviderStatus(ctx)
 }
 
 // request 执行 HTTP 请求的通用方法
@@ -210,30 +300,11 @@ func parseResponse(data interface{}, target interface{}) error {
 // Init 初始化全局 im-proxy SDK 客户端
 // baseURL 必须传入，否则会 panic
 // 如果 timeout 为 0，会使用默认值 30 秒
-func Init(opts ...Option) {
+func Init(opts ...Option) Client {
 	gClientOnce.Do(func() {
-		c := &client{
-			baseURL: "", // 初始化为空，必须通过 Option 设置
-			timeout: 30 * time.Second,
-			headers: make(map[string]string),
-		}
-
-		for _, opt := range opts {
-			opt(c)
-		}
-
-		// 检查 baseURL 是否已设置
-		if c.baseURL == "" {
-			panic("improxy: baseURL is required, please use improxy.WithBaseURL() to set it")
-		}
-
-		// 设置默认 Content-Type
-		if _, ok := c.headers["Content-Type"]; !ok {
-			c.headers["Content-Type"] = "application/json"
-		}
-
-		gClient = c
+		gClient = newClient(opts...)
 	})
+	return gClient
 }
 
 // GetClient 获取全局 im-proxy SDK 客户端

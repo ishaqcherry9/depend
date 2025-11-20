@@ -23,7 +23,7 @@ func ExampleInit() {
 		fmt.Println("Client is not initialized")
 		return
 	}
-	tokenResp, err := client.User().Register(ctx, &improxy.RegisterReq{
+	tokenResp, err := client.Register(ctx, &improxy.RegisterReq{
 		UID:    "user123",
 		Name:   "张三",
 		Avatar: "https://example.com/avatar.jpg",
@@ -50,7 +50,7 @@ func ExampleGetClient() {
 	}
 
 	// 使用客户端
-	tokenResp, err := client.User().Register(ctx, &improxy.RegisterReq{
+	tokenResp, err := client.Register(ctx, &improxy.RegisterReq{
 		UID:  "user123",
 		Name: "张三",
 	})
@@ -70,9 +70,8 @@ func ExampleNewClient() {
 
 	ctx := context.Background()
 
-	// 使用用户管理接口
-	userService := client.User()
-	tokenResp, err := userService.Register(ctx, &improxy.RegisterReq{
+	// 使用客户端（简化后的 API）
+	tokenResp, err := client.Register(ctx, &improxy.RegisterReq{
 		UID:    "user123",
 		Name:   "张三",
 		Avatar: "https://example.com/avatar.jpg",
@@ -92,14 +91,14 @@ func ExampleUserService() {
 	ctx := context.Background()
 
 	// 注册用户
-	tokenResp, _ := client.User().Register(ctx, &improxy.RegisterReq{
+	tokenResp, _ := client.Register(ctx, &improxy.RegisterReq{
 		UID:  "user123",
 		Name: "张三",
 	})
 	fmt.Printf("Token: %s\n", tokenResp.Tokens)
 
 	// 刷新Token
-	tokenResp, _ = client.User().RefreshToken(ctx, &improxy.RefreshReq{
+	tokenResp, _ = client.RefreshToken(ctx, &improxy.RefreshReq{
 		UID: "user123",
 	})
 	fmt.Printf("New Token: %s\n", tokenResp.Tokens)
@@ -113,7 +112,7 @@ func ExampleTeamService() {
 	ctx := context.Background()
 
 	// 创建群组
-	teamInfo, _ := client.Team().CreateTeam(ctx, &improxy.CreateTeamReq{
+	teamInfo, _ := client.CreateTeam(ctx, &improxy.CreateTeamReq{
 		OwnerAccountID:   "user123",
 		TeamType:         1,
 		Name:             "测试群组",
@@ -129,7 +128,7 @@ func ExampleTeamService() {
 	fmt.Printf("Team ID: %s\n", teamInfo.TeamID)
 
 	// 查询群组
-	listData, _ := client.Team().QueryTeam(ctx, &improxy.QueryTeamReq{
+	listData, _ := client.QueryTeam(ctx, &improxy.QueryTeamReq{
 		TeamIds:  "123456,789012",
 		TeamType: 1,
 	})
@@ -144,7 +143,7 @@ func ExampleMessageService() {
 	ctx := context.Background()
 
 	// 发送消息
-	err := client.Message().SendMsg(ctx, &improxy.MessageInfo{
+	err := client.SendMsg(ctx, &improxy.MessageInfo{
 		FromUID:     "user123",
 		ToUID:       "user456",
 		ToType:      "1",
@@ -167,7 +166,7 @@ func ExampleAuthService() {
 	ctx := context.Background()
 
 	// 登录
-	loginResp, _ := client.Auth().Login(ctx, &improxy.LoginRequest{
+	loginResp, _ := client.Login(ctx, &improxy.LoginRequest{
 		Username: "admin",
 		Password: "123456",
 	})
@@ -182,8 +181,7 @@ func ExampleMetaService() {
 	ctx := context.Background()
 
 	// 获取IM渠道状态
-	statusResp, _ := client.Meta().GetProviderStatus(ctx)
+	statusResp, _ := client.GetProviderStatus(ctx)
 	fmt.Printf("Current Provider: %s\n", statusResp.CurrentProvider)
 	fmt.Printf("Enabled Providers: %v\n", statusResp.EnabledProviders)
 }
-
