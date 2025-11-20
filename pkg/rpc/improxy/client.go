@@ -299,7 +299,6 @@ func parseResponse(data interface{}, target interface{}) error {
 
 // Init 初始化全局 im-proxy SDK 客户端
 // baseURL 必须传入，否则会 panic
-// 如果 timeout 为 0，会使用默认值 30 秒
 func Init(opts ...Option) Client {
 	gClientOnce.Do(func() {
 		gClient = newClient(opts...)
@@ -308,7 +307,6 @@ func Init(opts ...Option) Client {
 }
 
 // GetClient 获取全局 im-proxy SDK 客户端
-// 如果未通过 Init 初始化，返回 nil
 func GetClient() Client {
 	return gClient
 }
