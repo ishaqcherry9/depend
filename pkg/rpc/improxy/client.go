@@ -26,6 +26,7 @@ type Client interface {
 	DisableUser(ctx context.Context, req *UIDReq) error
 	EnableUser(ctx context.Context, req *UIDReq) error
 	RefreshToken(ctx context.Context, req *RefreshReq) (*TokenResp, error)
+	QueryUserProfile(ctx context.Context, req *QueryUserProfileReq) (*QueryUserProfileResp, error)
 
 	// 群组管理接口
 	CreateTeam(ctx context.Context, req *CreateTeamReq) (*TeamInfoRsp, error)

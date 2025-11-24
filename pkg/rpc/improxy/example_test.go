@@ -61,7 +61,7 @@ func ExampleGetClient() {
 	fmt.Printf("Token: %s\n", tokenResp.Tokens)
 }
 
-func ExampleUserService() {
+func ExampleClient_Register() {
 	// 初始化客户端
 	improxy.Init(
 		improxy.WithBaseURL("http://localhost:8080"),
@@ -84,7 +84,7 @@ func ExampleUserService() {
 	fmt.Printf("New Token: %s\n", tokenResp.Tokens)
 }
 
-func ExampleTeamService() {
+func ExampleClient_CreateTeam() {
 	// 初始化客户端
 	improxy.Init(
 		improxy.WithBaseURL("http://localhost:8080"),
@@ -117,7 +117,7 @@ func ExampleTeamService() {
 	fmt.Printf("Found %d teams\n", len(listData.TeamInfoList))
 }
 
-func ExampleMessageService() {
+func ExampleClient_SendMsg() {
 	// 初始化客户端
 	improxy.Init(
 		improxy.WithBaseURL("http://localhost:8080"),
@@ -142,7 +142,7 @@ func ExampleMessageService() {
 	fmt.Println("Message sent successfully")
 }
 
-func ExampleMetaService() {
+func ExampleClient_GetProviderStatus() {
 	// 初始化客户端
 	improxy.Init(
 		improxy.WithBaseURL("http://localhost:8080"),

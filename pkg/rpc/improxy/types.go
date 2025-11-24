@@ -24,6 +24,31 @@ type RefreshReq struct {
 	UID string `json:"uid"` // 用户唯一ID
 }
 
+// QueryUserProfileReq 查询用户名片请求
+type QueryUserProfileReq struct {
+	UID string `json:"uid" form:"uid"` // 用户唯一ID
+}
+
+// UserProfile 用户名片信息
+type UserProfile struct {
+	UID       string `json:"uid"`       // 用户唯一ID
+	Name      string `json:"name"`     // 用户昵称
+	Avatar    string `json:"avatar"`   // 用户头像URL
+	Sign      string `json:"sign"`      // 用户签名
+	Email     string `json:"email"`     // 用户邮箱
+	Birthday  string `json:"birthday"`  // 用户生日
+	Mobile    string `json:"mobile"`    // 用户手机号
+	Gender    int    `json:"gender"`    // 用户性别：0-未知，1-男，2-女
+	Extension string `json:"extension"` // 扩展字段
+}
+
+// QueryUserProfileResp 查询用户名片响应
+type QueryUserProfileResp struct {
+	Code int         `json:"code"` // 状态码
+	Msg  string      `json:"msg"`   // 提示信息
+	Data UserProfile `json:"data"`  // 用户名片信息
+}
+
 // ========== 群组管理相关类型 ==========
 
 // CreateTeamReq 创建群组请求
