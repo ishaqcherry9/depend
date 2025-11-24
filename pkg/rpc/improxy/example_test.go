@@ -3,16 +3,17 @@ package improxy_test
 import (
 	"context"
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/ishaqcherry9/depend/pkg/rpc/improxy"
 )
 
-func ExampleInit() {
+func TestExampleInit(t *testing.T) {
 	// 初始化全局客户端（在应用启动时调用一次）
 	// baseURL 是必需的，如果未传入会 panic
 	improxy.Init(
-		improxy.WithBaseURL("http://localhost:8080"), // 必需
+		improxy.WithBaseURL("http://localhost:9080"), // 必需
 		improxy.WithTimeout(30*time.Second),
 	)
 
@@ -35,10 +36,10 @@ func ExampleInit() {
 	fmt.Printf("Token: %s\n", tokenResp.Tokens)
 }
 
-func ExampleGetClient() {
+func TestExampleGetClient(t *testing.T) {
 	// 必须先初始化
 	improxy.Init(
-		improxy.WithBaseURL("http://localhost:8080"),
+		improxy.WithBaseURL("http://localhost:9080"),
 	)
 
 	// 获取全局客户端
@@ -61,10 +62,11 @@ func ExampleGetClient() {
 	fmt.Printf("Token: %s\n", tokenResp.Tokens)
 }
 
-func ExampleClient_Register() {
+func TestExampleClient_Register(t *testing.T) {
+	fmt.Print("ExampleClient_Register")
 	// 初始化客户端
 	improxy.Init(
-		improxy.WithBaseURL("http://localhost:8080"),
+		improxy.WithBaseURL("http://localhost:9080"),
 	)
 	client := improxy.GetClient()
 
@@ -84,10 +86,10 @@ func ExampleClient_Register() {
 	fmt.Printf("New Token: %s\n", tokenResp.Tokens)
 }
 
-func ExampleClient_CreateTeam() {
+func TestExampleClient_CreateTeam(t *testing.T) {
 	// 初始化客户端
 	improxy.Init(
-		improxy.WithBaseURL("http://localhost:8080"),
+		improxy.WithBaseURL("http://localhost:9080"),
 	)
 	client := improxy.GetClient()
 
@@ -117,10 +119,10 @@ func ExampleClient_CreateTeam() {
 	fmt.Printf("Found %d teams\n", len(listData.TeamInfoList))
 }
 
-func ExampleClient_SendMsg() {
+func TestExampleClient_SendMsg(t *testing.T) {
 	// 初始化客户端
 	improxy.Init(
-		improxy.WithBaseURL("http://localhost:8080"),
+		improxy.WithBaseURL("http://localhost:9080"),
 	)
 	client := improxy.GetClient()
 
@@ -142,10 +144,10 @@ func ExampleClient_SendMsg() {
 	fmt.Println("Message sent successfully")
 }
 
-func ExampleClient_GetProviderStatus() {
+func TestExampleClient_GetProviderStatus(t *testing.T) {
 	// 初始化客户端
 	improxy.Init(
-		improxy.WithBaseURL("http://localhost:8080"),
+		improxy.WithBaseURL("http://localhost:9080"),
 	)
 	client := improxy.GetClient()
 
