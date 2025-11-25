@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/ishaqcherry9/depend/pkg/gin/middleware"
+	"github.com/ishaqcherry9/depend/pkg/krand"
 	"github.com/ishaqcherry9/depend/pkg/rpc/improxy"
 )
 
@@ -17,7 +19,7 @@ func TestExampleClient_Register(t *testing.T) {
 	)
 	client := improxy.GetClient()
 
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), middleware.ContextRequestIDKey, krand.String(krand.R_All, 10))
 
 	// 注册用户
 	tokenResp, err := client.Register(ctx, &improxy.RegisterReq{
@@ -39,7 +41,7 @@ func TestExampleClient_RefreshToken(t *testing.T) {
 	)
 	client := improxy.GetClient()
 
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), middleware.ContextRequestIDKey, krand.String(krand.R_All, 10))
 
 	// 刷新Token
 	tokenResp, err := client.RefreshToken(ctx, &improxy.RefreshReq{
@@ -61,7 +63,7 @@ func TestExampleClient_QueryUserProfile(t *testing.T) {
 	)
 	client := improxy.GetClient()
 
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), middleware.ContextRequestIDKey, "afwlejflwejfla")
 
 	// 查询用户名片
 	userProfile, err := client.QueryUserProfile(ctx, &improxy.QueryUserProfileReq{
@@ -81,7 +83,7 @@ func TestExampleClient_CreateTeam(t *testing.T) {
 	)
 	client := improxy.GetClient()
 
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), middleware.ContextRequestIDKey, krand.String(krand.R_All, 10))
 
 	// 创建群组
 	teamInfo, _ := client.CreateTeam(ctx, &improxy.CreateTeamReq{
@@ -114,7 +116,7 @@ func TestExampleClient_SendMsg(t *testing.T) {
 	)
 	client := improxy.GetClient()
 
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), middleware.ContextRequestIDKey, krand.String(krand.R_All, 10))
 
 	// 发送消息
 	err := client.SendMsg(ctx, &improxy.MessageInfo{
@@ -139,7 +141,7 @@ func TestExampleClient_GetProviderStatus(t *testing.T) {
 	)
 	client := improxy.GetClient()
 
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), middleware.ContextRequestIDKey, krand.String(krand.R_All, 10))
 
 	// 获取IM渠道状态
 	statusResp, _ := client.GetProviderStatus(ctx)

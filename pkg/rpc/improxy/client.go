@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ishaqcherry9/depend/pkg/gin/middleware"
 	jsoniter "github.com/ishaqcherry9/depend/pkg/json-iterator"
 	"github.com/ishaqcherry9/depend/pkg/logger"
 )
@@ -252,6 +253,11 @@ func (c *client) request(ctx context.Context, method, path string, reqBody inter
 	// 设置请求头
 	for k, v := range c.headers {
 		httpReq.Header.Set(k, v)
+		// 从ctx中获取x-request-id,并设置到请求头
+		traceID := middleware.CtxRequestID(ctx)
+		if traceID != "" {
+			httpReq.Header.Set(middleware.ContextRequestIDKey, traceID)
+		}
 	}
 
 	// 使用带连接池的 HTTP 客户端发送请求
@@ -266,7 +272,7 @@ func (c *client) request(ctx context.Context, method, path string, reqBody inter
 	}
 	defer resp.Body.Close()
 	// 获取 response header 中的 traceid 并记录到日志上下文
-	traceID := resp.Header.Get("X-Request-ID")
+	traceID := resp.Header.Get(middleware.ContextRequestIDKey)
 
 	if resp.StatusCode != 200 {
 		body, _ := io.ReadAll(resp.Body)
