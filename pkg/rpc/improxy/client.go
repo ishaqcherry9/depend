@@ -1,12 +1,17 @@
 package improxy
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
 	"sync"
 	"time"
 
-	"github.com/ishaqcherry9/depend/pkg/httpcli"
 	jsoniter "github.com/ishaqcherry9/depend/pkg/json-iterator"
 	"github.com/ishaqcherry9/depend/pkg/logger"
 )
@@ -50,9 +55,10 @@ type Client interface {
 }
 
 type client struct {
-	baseURL string
-	timeout time.Duration
-	headers map[string]string
+	baseURL    string
+	timeout    time.Duration
+	headers    map[string]string
+	httpClient *http.Client // 带连接池的 HTTP 客户端
 }
 
 // Option 客户端配置选项
@@ -94,6 +100,50 @@ func WithHeader(key, value string) Option {
 	}
 }
 
+// WithMaxIdleConns 设置最大空闲连接数（连接池配置）
+func WithMaxIdleConns(maxIdleConns int) Option {
+	return func(c *client) {
+		if c.httpClient != nil {
+			if transport, ok := c.httpClient.Transport.(*http.Transport); ok {
+				transport.MaxIdleConns = maxIdleConns
+			}
+		}
+	}
+}
+
+// WithMaxIdleConnsPerHost 设置每个主机最大空闲连接数（连接池配置）
+func WithMaxIdleConnsPerHost(maxIdleConnsPerHost int) Option {
+	return func(c *client) {
+		if c.httpClient != nil {
+			if transport, ok := c.httpClient.Transport.(*http.Transport); ok {
+				transport.MaxIdleConnsPerHost = maxIdleConnsPerHost
+			}
+		}
+	}
+}
+
+// WithIdleConnTimeout 设置空闲连接超时时间（连接池配置）
+func WithIdleConnTimeout(timeout time.Duration) Option {
+	return func(c *client) {
+		if c.httpClient != nil {
+			if transport, ok := c.httpClient.Transport.(*http.Transport); ok {
+				transport.IdleConnTimeout = timeout
+			}
+		}
+	}
+}
+
+// WithMaxConnsPerHost 设置每个主机最大连接数（连接池配置）
+func WithMaxConnsPerHost(maxConnsPerHost int) Option {
+	return func(c *client) {
+		if c.httpClient != nil {
+			if transport, ok := c.httpClient.Transport.(*http.Transport); ok {
+				transport.MaxConnsPerHost = maxConnsPerHost
+			}
+		}
+	}
+}
+
 // newClient 创建客户端实例的内部函数
 func newClient(opts ...Option) Client {
 
@@ -103,6 +153,20 @@ func newClient(opts ...Option) Client {
 		headers: make(map[string]string),
 	}
 
+	// 先创建带连接池的 HTTP 客户端（默认配置）
+	transport := &http.Transport{
+		MaxIdleConns:        100,              // 最大空闲连接数
+		MaxIdleConnsPerHost: 10,               // 每个主机最大空闲连接数
+		IdleConnTimeout:     90 * time.Second, // 空闲连接超时时间
+		MaxConnsPerHost:     0,                // 0 表示不限制每个主机的最大连接数
+	}
+
+	c.httpClient = &http.Client{
+		Timeout:   c.timeout,
+		Transport: transport,
+	}
+
+	// 应用所有选项
 	for _, opt := range opts {
 		opt(c)
 	}
@@ -117,122 +181,132 @@ func newClient(opts ...Option) Client {
 		c.headers["Content-Type"] = "application/json"
 	}
 
+	// 确保 HTTP 客户端的超时时间已更新
+	c.httpClient.Timeout = c.timeout
+
 	return c
 }
 
 // request 执行 HTTP 请求的通用方法
+// 使用带连接池的 HTTP 客户端，提升性能和资源利用率
 func (c *client) request(ctx context.Context, method, path string, reqBody interface{}, respBody interface{}) error {
-	url := fmt.Sprintf("%s%s", c.baseURL, path)
+	requestURL := fmt.Sprintf("%s%s", c.baseURL, path)
 
 	logger.Debug(ctx, "request start",
 		logger.String("method", method),
 		logger.String("path", path),
-		logger.String("url", url),
+		logger.String("url", requestURL),
 	)
 
-	req := httpcli.New()
-	req.SetURL(url)
-	req.SetTimeout(c.timeout)
-
-	// 设置请求头
-	for k, v := range c.headers {
-		req.SetHeader(k, v)
-	}
-
-	// 如果是 GET 请求，将 reqBody 作为查询参数
-	if method == "GET" {
-		if params, ok := reqBody.(map[string]interface{}); ok {
-			req.SetParams(params)
-		}
-		resp, err := req.GET()
-		if err != nil {
-			logger.Error(ctx, "GET request failed",
-				logger.String("method", method),
-				logger.String("url", url),
-				logger.Err(err),
-			)
-			return fmt.Errorf("GET request failed: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != 200 {
-			body, _ := resp.ReadBody()
-			err := fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
-			logger.Error(ctx, "GET request failed with non-200 status",
-				logger.String("method", method),
-				logger.String("url", url),
-				logger.Int("status_code", resp.StatusCode),
-				logger.String("response_body", string(body)),
-				logger.Err(err),
-			)
-			return err
-		}
-
-		logger.Info(ctx, "request success",
-			logger.String("method", method),
-			logger.String("url", url),
-			logger.Int("status_code", resp.StatusCode),
-		)
-
-		return resp.BindJSON(respBody)
-	}
-
-	// POST/PUT/PATCH/DELETE 请求
-	if reqBody != nil {
-		req.SetBody(reqBody)
-	}
-	var resp *httpcli.Response
+	var httpReq *http.Request
 	var err error
 
-	switch method {
-	case "POST":
-		resp, err = req.POST()
-	case "PUT":
-		resp, err = req.PUT()
-	case "PATCH":
-		resp, err = req.PATCH()
-	case "DELETE":
-		resp, err = req.DELETE()
-	default:
-		err := fmt.Errorf("unsupported method: %s", method)
-		logger.Error(ctx, "unsupported request method",
-			logger.String("method", method),
-			logger.String("url", url),
-			logger.Err(err),
-		)
-		return err
+	// 构建 HTTP 请求
+	if method == "GET" || method == "DELETE" {
+		// GET/DELETE 请求，将 reqBody 作为查询参数
+		fullURL := requestURL
+		if params, ok := reqBody.(map[string]interface{}); ok && len(params) > 0 {
+			// 构建查询字符串
+			queryValues := url.Values{}
+			for k, v := range params {
+				queryValues.Add(k, fmt.Sprintf("%v", v))
+			}
+			queryStr := queryValues.Encode()
+			if len(queryStr) > 0 {
+				if strings.Contains(fullURL, "?") {
+					fullURL += "&" + queryStr
+				} else {
+					fullURL += "?" + queryStr
+				}
+			}
+		}
+		httpReq, err = http.NewRequestWithContext(ctx, method, fullURL, nil)
+	} else {
+		// POST/PUT/PATCH 请求
+		var bodyReader io.Reader
+		if reqBody != nil {
+			// 序列化请求体
+			bodyBytes, marshalErr := jsoniter.Marshal(reqBody)
+			if marshalErr != nil {
+				logger.Error(ctx, fmt.Sprintf("marshal request body failed for %s", method),
+					logger.String("method", method),
+					logger.String("url", requestURL),
+					logger.Err(marshalErr),
+				)
+				return fmt.Errorf("marshal request body failed: %w", marshalErr)
+			}
+			bodyReader = bytes.NewReader(bodyBytes)
+		}
+		httpReq, err = http.NewRequestWithContext(ctx, method, requestURL, bodyReader)
 	}
 
 	if err != nil {
+		logger.Error(ctx, fmt.Sprintf("create %s request failed", method),
+			logger.String("method", method),
+			logger.String("url", requestURL),
+			logger.Err(err),
+		)
+		return fmt.Errorf("create request failed: %w", err)
+	}
+
+	// 设置请求头
+	for k, v := range c.headers {
+		httpReq.Header.Set(k, v)
+	}
+
+	// 使用带连接池的 HTTP 客户端发送请求
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
 		logger.Error(ctx, fmt.Sprintf("%s request failed", method),
 			logger.String("method", method),
-			logger.String("url", url),
+			logger.String("url", requestURL),
 			logger.Err(err),
 		)
 		return fmt.Errorf("%s request failed: %w", method, err)
 	}
 	defer resp.Body.Close()
+	// 获取 response header 中的 traceid 并记录到日志上下文
+	traceID := resp.Header.Get("X-Request-ID")
 
 	if resp.StatusCode != 200 {
-		body, _ := resp.ReadBody()
-		err := fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+		body, _ := io.ReadAll(resp.Body)
 		logger.Error(ctx, fmt.Sprintf("%s request failed with non-200 status", method),
 			logger.String("method", method),
-			logger.String("url", url),
+			logger.String("url", requestURL),
 			logger.Int("status_code", resp.StatusCode),
 			logger.String("response_body", string(body)),
 			logger.Err(err),
+			logger.String("traceid", traceID),
 		)
-		return err
+		return errors.New(string(body))
+	}
+
+	// 解析响应
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Error(ctx, "read response body failed", logger.String("method", method), logger.String("url", requestURL), logger.Err(err), logger.String("traceid", traceID))
+		return fmt.Errorf("read response body failed: %w", err)
+	}
+
+	if err := jsoniter.Unmarshal(body, respBody); err != nil {
+		logger.Error(ctx, "unmarshal response body failed",
+			logger.String("method", method),
+			logger.String("url", requestURL),
+			logger.Err(err),
+			logger.String("traceid", traceID),
+		)
+		return fmt.Errorf("unmarshal response body failed: %w", err)
 	}
 
 	logger.Info(ctx, "request success",
 		logger.String("method", method),
-		logger.String("url", url),
+		logger.String("url", requestURL),
 		logger.Int("status_code", resp.StatusCode),
+		logger.String("response_body", string(body)),
+		logger.String("traceid", traceID),
 	)
 
-	return resp.BindJSON(respBody)
+	return nil
 }
 
 // StandardResponse 标准响应格式

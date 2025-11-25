@@ -4,64 +4,11 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/ishaqcherry9/depend/pkg/rpc/improxy"
 )
 
-func TestExampleInit(t *testing.T) {
-	// 初始化全局客户端（在应用启动时调用一次）
-	// baseURL 是必需的，如果未传入会 panic
-	improxy.Init(
-		improxy.WithBaseURL("http://localhost:9080"), // 必需
-		improxy.WithTimeout(30*time.Second),
-	)
-
-	// 获取全局客户端并使用
-	ctx := context.Background()
-	client := improxy.GetClient()
-	if client == nil {
-		fmt.Println("Client is not initialized")
-		return
-	}
-	tokenResp, err := client.Register(ctx, &improxy.RegisterReq{
-		UID:    "user123",
-		Name:   "张三",
-		Avatar: "https://example.com/avatar.jpg",
-	})
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
-	fmt.Printf("Token: %s\n", tokenResp.Tokens)
-}
-
-func TestExampleGetClient(t *testing.T) {
-	// 必须先初始化
-	improxy.Init(
-		improxy.WithBaseURL("http://localhost:9080"),
-	)
-
-	// 获取全局客户端
-	ctx := context.Background()
-	client := improxy.GetClient()
-	if client == nil {
-		fmt.Println("Client is not initialized")
-		return
-	}
-
-	// 使用客户端
-	tokenResp, err := client.Register(ctx, &improxy.RegisterReq{
-		UID:  "user123",
-		Name: "张三",
-	})
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
-	fmt.Printf("Token: %s\n", tokenResp.Tokens)
-}
-
+// 测试注册
 func TestExampleClient_Register(t *testing.T) {
 	fmt.Print("ExampleClient_Register")
 	// 初始化客户端
@@ -73,17 +20,58 @@ func TestExampleClient_Register(t *testing.T) {
 	ctx := context.Background()
 
 	// 注册用户
-	tokenResp, _ := client.Register(ctx, &improxy.RegisterReq{
-		UID:  "user123",
+	tokenResp, err := client.Register(ctx, &improxy.RegisterReq{
+		UID:  "user1",
 		Name: "张三",
 	})
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
 	fmt.Printf("Token: %s\n", tokenResp.Tokens)
+}
+
+func TestExampleClient_RefreshToken(t *testing.T) {
+	fmt.Print("ExampleClient_RefreshToken")
+	// 初始化客户端
+	improxy.Init(
+		improxy.WithBaseURL("http://localhost:9080"),
+	)
+	client := improxy.GetClient()
+
+	ctx := context.Background()
 
 	// 刷新Token
-	tokenResp, _ = client.RefreshToken(ctx, &improxy.RefreshReq{
+	tokenResp, err := client.RefreshToken(ctx, &improxy.RefreshReq{
 		UID: "user123",
 	})
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
 	fmt.Printf("New Token: %s\n", tokenResp.Tokens)
+}
+
+// 测试查询用户名片
+func TestExampleClient_QueryUserProfile(t *testing.T) {
+	fmt.Print("ExampleClient_QueryUserProfile")
+	// 初始化客户端
+	improxy.Init(
+		improxy.WithBaseURL("http://localhost:9080"),
+	)
+	client := improxy.GetClient()
+
+	ctx := context.Background()
+
+	// 查询用户名片
+	userProfile, err := client.QueryUserProfile(ctx, &improxy.QueryUserProfileReq{
+		UID: "user1",
+	})
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+	fmt.Printf("User Profile: %v\n", userProfile)
 }
 
 func TestExampleClient_CreateTeam(t *testing.T) {
