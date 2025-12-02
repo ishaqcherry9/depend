@@ -53,7 +53,7 @@
 ## 📦 安装
 
 ```bash
-go get github.com/ishaqcherry9/depend
+go get github.com/ishaqcherry9/depend@v1.4.14
 ```
 
 ## 🚀 功能特性
