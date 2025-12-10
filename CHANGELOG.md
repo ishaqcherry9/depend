@@ -1,3 +1,9 @@
+## [v1.4.15] - 2025-12-10
+### Feat
+- 可指定pulsar consumer worker数目
+- 适配跨域
+---
+
 ## [v1.4.14] - 2025-11-28
 ### Feat
 - 添加im proxy sdk，屏蔽接口细节
