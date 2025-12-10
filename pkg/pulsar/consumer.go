@@ -17,6 +17,7 @@ type consumer struct {
 	internal pulsar.Consumer
 	mu       sync.RWMutex
 	closed   bool
+	size     int
 }
 
 func (c *consumer) Receive(ctx context.Context) (*Message, error) {
@@ -41,8 +42,24 @@ func (c *consumer) Receive(ctx context.Context) (*Message, error) {
 	}, nil
 }
 
+func (c *consumer) GetWorkerSize() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.size
+}
+
+func (c *consumer) SetWorkerSize(size int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.size = size
+}
+
 func (c *consumer) Consume(ctx context.Context, handleFn HandleMessageFn) error {
-	pool := workerpool.NewWorkerFIFOPool(10, func(err interface{}) {
+	if c.GetWorkerSize() < 1 {
+		return fmt.Errorf("invalid worker size: %d", c.GetWorkerSize())
+	}
+
+	pool := workerpool.NewWorkerFIFOPool(c.GetWorkerSize(), func(err interface{}) {
 		logger.Error(ctx, "message panic", zap.Any("panic", err))
 	})
 	defer workerpool.FIFOAntsRelease(pool)
