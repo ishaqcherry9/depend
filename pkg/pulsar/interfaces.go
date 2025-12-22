@@ -19,9 +19,16 @@ type BatchResult struct {
 	FailureBusinessIDs []string
 }
 
+type MyConsumerOptions struct {
+	Opts       pulsar.ConsumerOptions
+	WorkerSize int
+	MaxRetry   int
+}
+
 type Client interface {
 	Producer(opts pulsar.ProducerOptions) (Producer, error)
 	Consumer(opts pulsar.ConsumerOptions) (Consumer, error)
+	//MyConsumer(opts MyConsumerOptions) (Consumer, error)
 	MultiTopicConsumer(opts pulsar.ConsumerOptions) (Consumer, error)
 	Reader(opts pulsar.ReaderOptions) (Reader, error)
 	BeginTransaction(timeout time.Duration) (pulsar.Transaction, error)
@@ -39,6 +46,8 @@ type Producer interface {
 	Close() error
 }
 
+// Get|SetWorkerSize 暂时蹩脚放在interface中，可新建MyConsumerOptions结构体，包括如下参数，看后续业务诉求。
+// pulsar.ConsumerOptions、WorkerSize、MaxRetry等，放在client创建时指定。
 type Consumer interface {
 	GetWorkerSize() int
 	SetWorkerSize(size int)

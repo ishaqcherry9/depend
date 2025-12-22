@@ -56,7 +56,7 @@ func (c *consumer) SetWorkerSize(size int) {
 
 func (c *consumer) Consume(ctx context.Context, handleFn HandleMessageFn) error {
 	if c.GetWorkerSize() < 1 {
-		return fmt.Errorf("invalid worker size: %d", c.GetWorkerSize())
+		c.SetWorkerSize(1)
 	}
 
 	pool := workerpool.NewWorkerFIFOPool(c.GetWorkerSize(), func(err interface{}) {
