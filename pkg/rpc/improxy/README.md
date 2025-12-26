@@ -14,12 +14,24 @@ im-proxy SDK 是一个用于调用 im-proxy 服务的 Go 客户端库。它封�
 ## 安装
 
 ```bash
-go get github.com/ishaqcherry9/depend/pkg/rpc/improxy
+go get github.com/ishaqcherry9/depend/pkg/rpc/improxy@dev
 ```
 
 ## 快速开始
 
 ### 使用全局单例（推荐）
+在 nacos 或本地 yaml 文件中添加如下配置：
+
+```yaml
+imProxy:
+  baseURL: "http://16.162.121.65:30051"
+  timeout: 2
+```
+
+- `baseURL`: im-proxy 服务的地址，可根据实际环境选择线上或本地。
+- `timeout`: 请求超时时间（单位：秒）。
+
+
 
 ```go
 import (
@@ -28,13 +40,11 @@ import (
     "github.com/ishaqcherry9/depend/pkg/rpc/improxy"
 )
 
-// 在应用启动时初始化全局客户端
-func init() {
-    improxy.Init(
-        improxy.WithBaseURL("http://localhost:8080"),
-        improxy.WithTimeout(2 * time.Second),
-    )
-}
+// 初始化im代理的客户端
+improxy.Init(
+	improxy.WithBaseURL(cfg.IMProxy.BaseURL), // 必需
+	improxy.WithTimeout(time.Duration(cfg.IMProxy.Timeout)*time.Second),
+)
 
 // 在代码中直接使用全局客户端
 func main() {
