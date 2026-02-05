@@ -6,6 +6,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel/sdk/trace"
+	"go.uber.org/zap"
 )
 
 type Option func(*options)
@@ -24,6 +25,7 @@ type options struct {
 
 	enableTrace    bool
 	tracerProvider *trace.TracerProvider
+	logger         *zap.Logger
 }
 
 func (o *options) apply(opts ...Option) {
@@ -83,5 +85,13 @@ func WithSentinelOptions(opt *redis.FailoverOptions) Option {
 func WithClusterOptions(opt *redis.ClusterOptions) Option {
 	return func(o *options) {
 		o.clusterOptions = opt
+	}
+}
+
+// WithLoggerOptions 携带zap log日志打印
+func WithLoggerOptions(opt *zap.Logger) Option {
+	return func(o *options) {
+		o.logger = opt
+
 	}
 }

@@ -1,3 +1,6 @@
+## [v1.4.17] - 2026-01-21
+# Feat
+- 新增redis全链路日志追踪 
 ## [v1.4.16] - 2025-12-10
 ### Feat
 - 可指定pulsar consumer worker数目
