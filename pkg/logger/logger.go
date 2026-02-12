@@ -52,7 +52,14 @@ func Init(opts ...Option) (*zap.Logger, error) {
 		}
 		str = fmt.Sprintf("initialize logger finish, config is output to 'terminal', format=%s, level=%s", encoding, levelName)
 	} else {
-		zapLog = log2File(encoding, levelName, o.fileConfig)
+		// 同时输出到终端和文件
+		termLog, termErr := log2Terminal(levelName, encoding)
+		if termErr != nil {
+			panic(termErr)
+		}
+		fileLog := log2File(encoding, levelName, o.fileConfig)
+		teeCore := zapcore.NewTee(termLog.Core(), fileLog.Core())
+		zapLog = zap.New(teeCore, zap.AddCaller())
 		str = fmt.Sprintf("initialize logger finish, config is output to 'file', format=%s, level=%s, file=%s", encoding, levelName, o.fileConfig.filename)
 	}
 
@@ -87,7 +94,7 @@ func log2Terminal(levelName string, encoding string) (*zap.Logger, error) {
 	} else {
 		config.EncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
 	}
-	config.EncoderConfig.EncodeTime = timeFormatter
+	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	return config.Build()
 }
 
@@ -108,6 +115,7 @@ func log2File(encoding string, levelName string, fo *fileOptions) *zap.Logger {
 		MaxBackups: fo.maxBackups,
 		MaxAge:     fo.maxAge,
 		Compress:   fo.isCompression,
+		LocalTime:  fo.isLocalTime,
 	})
 	core := zapcore.NewCore(encoder, ws, getLevelSize(levelName))
 

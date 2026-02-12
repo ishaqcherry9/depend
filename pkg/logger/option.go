@@ -8,11 +8,11 @@ import (
 
 var (
 	defaultLevel    = "debug"
-	defaultEncoding = formatConsole
+	defaultEncoding = formatJSON
 	defaultIsSave   = false
 
-	defaultFilename      = "out.log"
-	defaultMaxSize       = 10
+	defaultFilename      = "logs/app.log"
+	defaultMaxSize       = 200
 	defaultMaxBackups    = 100
 	defaultMaxAge        = 30
 	defaultIsCompression = false
@@ -31,9 +31,10 @@ type options struct {
 
 func defaultOptions() *options {
 	return &options{
-		level:    defaultLevel,
-		encoding: defaultEncoding,
-		isSave:   defaultIsSave,
+		level:      defaultLevel,
+		encoding:   defaultEncoding,
+		isSave:     defaultIsSave,
+		fileConfig: defaultFileOptions(),
 	}
 }
 
