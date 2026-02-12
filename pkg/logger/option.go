@@ -12,7 +12,7 @@ var (
 	defaultIsSave   = false
 
 	defaultFilename      = "logs/app.log"
-	defaultMaxSize       = 200
+	defaultMaxSize       = 100
 	defaultMaxBackups    = 100
 	defaultMaxAge        = 30
 	defaultIsCompression = false
