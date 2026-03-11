@@ -3,11 +3,11 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"strings"
 
+	"github.com/google/uuid"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-
-	"github.com/ishaqcherry9/depend/pkg/krand"
 )
 
 var (
@@ -77,7 +77,7 @@ func RequestID(opts ...RequestIDOption) gin.HandlerFunc {
 		requestID := c.Request.Header.Get(HeaderXRequestIDKey)
 
 		if requestID == "" {
-			requestID = krand.String(krand.R_All, 10)
+			requestID = "trace_" + strings.ReplaceAll(uuid.NewString(), "-", "")
 			c.Request.Header.Set(HeaderXRequestIDKey, requestID)
 		}
 
