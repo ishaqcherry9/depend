@@ -2,10 +2,12 @@ package response
 
 import (
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/ishaqcherry9/depend/pkg/errcode"
-	"github.com/ishaqcherry9/depend/pkg/json-iterator"
-	"net/http"
+	jsoniter "github.com/ishaqcherry9/depend/pkg/json-iterator"
 )
 
 type Result struct {
@@ -13,6 +15,7 @@ type Result struct {
 	Msg       string      `json:"msg"`
 	Data      interface{} `json:"data"`
 	RequestId string      `json:"requestId"`
+	Time      int64       `json:"time,omitempty"`
 }
 
 func GetRequestId(c *gin.Context) string {
@@ -68,6 +71,9 @@ func respJSONWithStatusCode(c *gin.Context, code int, msg string, data ...interf
 	}
 
 	resp := newResp(code, msg, GetRequestId(c), firstData)
+	if code == http.StatusOK {
+		resp.Time = time.Now().Unix()
+	}
 	writeJSON(c, code, resp)
 }
 
@@ -133,6 +139,9 @@ func respJSONWith200(c *gin.Context, code int, msg string, data ...interface{}) 
 	}
 
 	resp := newResp(code, msg, GetRequestId(c), firstData)
+	if code == 0 {
+		resp.Time = time.Now().Unix()
+	}
 	writeJSON(c, http.StatusOK, resp)
 }
 
@@ -149,7 +158,6 @@ func Error(c *gin.Context, err *errcode.Error, data ...interface{}) {
 func ErrorWithCodeMsg(c *gin.Context, code int, msg string, data ...interface{}) {
 	respJSONWith200(c, code, msg, data...)
 }
-
 
 // 如参数缺失http状态码应返400，授权失败返401，内部错误返500等。按HTTP协议语义返回，便于后续监控&可观测性建设。
 func ErrorStatus(c *gin.Context, httpStatusCode int, err *errcode.Error, data ...interface{}) {

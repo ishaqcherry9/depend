@@ -9,7 +9,7 @@ import (
 )
 
 // ContextRequestIDKey 请求ID的key
-var ContextRequestIDKey = "request_id"
+const ContextRequestIDKey = "request_id"
 
 func Debug(c context.Context, msg string, fields ...Field) {
 	fields = append(fields, AddCommonFields(c)...)

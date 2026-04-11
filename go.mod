@@ -12,7 +12,9 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dgraph-io/ristretto v0.2.0
 	github.com/disintegration/imaging v1.6.2
+	github.com/elliotchance/phpserialize v1.4.0
 	github.com/felixge/fgprof v0.9.5
+	github.com/forgoer/openssl v1.6.0
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-gonic/gin v1.10.1
